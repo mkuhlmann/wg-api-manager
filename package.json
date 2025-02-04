@@ -1,22 +1,14 @@
 {
-  "name": "wg-manager",
-  "version": "1.0.50",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun run --watch src/index.ts"
-  },
-  "dependencies": {
-    "@elysiajs/swagger": "^1.2.0",
-    "@types/pg": "^8.11.10",
-    "drizzle-orm": "^0.38.3",
-    "elysia": "latest",
-    "ip-cidr": "^4.0.2",
-    "nanoid": "^5.0.9",
-    "pg": "^8.13.1"
-  },
-  "devDependencies": {
-    "bun-types": "latest",
-    "drizzle-kit": "^0.30.1"
-  },
-  "module": "src/index.js"
+	"name": "wg-manager",
+	"scripts": {
+		"dev": "bun --filter '*' dev",
+		"start": "bun --cwd packages/server start"
+	},
+	"workspaces": [
+		"packages/*"
+	],
+	"dependencies": {},
+	"trustedDependencies": [
+		"es5-ext"
+	]
 }

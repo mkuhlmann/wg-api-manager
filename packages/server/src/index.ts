@@ -1,17 +1,13 @@
 import { Elysia, t } from 'elysia';
-import {
-	generatePeerConfig,
-	generateServerConfig,
-	wgDerivePublicKey,
-	wgGenKey,
-	wgGenPsk,
-} from './wg/wg';
+import { generatePeerConfig, generateServerConfig, wgDerivePublicKey, wgGenKey, wgGenPsk } from './wg/wg';
 import swagger from '@elysiajs/swagger';
 import { db } from './db';
-import { peersTable, serverPeersTable } from './db/schema';
+import { Peer, peersTable, serverPeersTable } from './db/schema';
 import IPCIDR from 'ip-cidr';
 import { eq, or, and } from 'drizzle-orm';
 import { auth } from './api/auth';
+import { wgManager } from './wg/manager';
+import staticPlugin from '@elysiajs/static';
 
 const _app = new Elysia()
 	.use(
@@ -87,13 +83,28 @@ const _app = new Elysia()
 				}
 			)
 			.get(
+				'/wg/servers/:id',
+				async ({ params }) => {
+					const server = await db.query.serverPeersTable.findFirst({
+						where: or(eq(serverPeersTable.id, params.id), eq(serverPeersTable.interfaceName, params.id)),
+					});
+
+					if (!server) {
+						throw new Error('Server not found');
+					}
+
+					return server;
+				},
+				{
+					params: t.Object({ id: t.String() }),
+					verifyAuth: { scope: 'admin' },
+				}
+			)
+			.get(
 				'/wg/servers/:id/config',
 				async ({ params }) => {
 					const server = await db.query.serverPeersTable.findFirst({
-						where: or(
-							eq(serverPeersTable.id, params.id),
-							eq(serverPeersTable.interfaceName, params.id)
-						),
+						where: or(eq(serverPeersTable.id, params.id), eq(serverPeersTable.interfaceName, params.id)),
 					});
 
 					if (!server) {
@@ -113,19 +124,24 @@ const _app = new Elysia()
 				'/wg/servers/:id/peers',
 				async ({ params }) => {
 					const server = await db.query.serverPeersTable.findFirst({
-						where: or(
-							eq(serverPeersTable.id, params.id),
-							eq(serverPeersTable.interfaceName, params.id)
-						),
+						where: or(eq(serverPeersTable.id, params.id), eq(serverPeersTable.interfaceName, params.id)),
 					});
 
 					if (!server) {
 						throw new Error('Server not found');
 					}
 
-					return db.query.peersTable.findMany({
+					let peers = await db.query.peersTable.findMany({
 						where: eq(peersTable.serverPeerId, server.id),
 					});
+
+					const peersWithInfo: (Peer & { peerInfo: null | { connected: boolean; wgTransferRx: number; wgTransferTx: number; wgLatestHandshake: number; wgEndpoint: string } })[] = [];
+
+					for (const peer of peers) {
+						peersWithInfo.push({ ...peer, peerInfo: wgManager.peerInfo[peer.wgPublicKey] ?? null });
+					}
+
+					return peersWithInfo;
 				},
 				{
 					params: t.Object({
@@ -138,10 +154,7 @@ const _app = new Elysia()
 				'/wg/servers/:id/peers',
 				async ({ params, body }) => {
 					const server = await db.query.serverPeersTable.findFirst({
-						where: or(
-							eq(serverPeersTable.id, params.id),
-							eq(serverPeersTable.interfaceName, params.id)
-						),
+						where: or(eq(serverPeersTable.id, params.id), eq(serverPeersTable.interfaceName, params.id)),
 					});
 
 					if (!server || !server.cidrRange) {
@@ -166,10 +179,7 @@ const _app = new Elysia()
 						const _ip = ips[0];
 
 						const peer = await db.query.peersTable.findFirst({
-							where: and(
-								eq(peersTable.wgAddress, _ip),
-								eq(peersTable.serverPeerId, server.id)
-							),
+							where: and(eq(peersTable.wgAddress, _ip), eq(peersTable.serverPeerId, server.id)),
 						});
 
 						if (!peer) {
@@ -213,10 +223,7 @@ const _app = new Elysia()
 				'/wg/servers/:id/peers/:peerId/config',
 				async ({ params }) => {
 					const peer = await db.query.peersTable.findFirst({
-						where: and(
-							eq(peersTable.id, params.peerId),
-							eq(peersTable.serverPeerId, params.id)
-						),
+						where: and(eq(peersTable.id, params.peerId), eq(peersTable.serverPeerId, params.id)),
 					});
 
 					if (!peer || peer.serverPeerId != params.id) {
@@ -254,8 +261,17 @@ const _app = new Elysia()
 				}
 			)
 	)
+	.use(
+		staticPlugin({
+			indexHTML: true,
+			assets: '../app/dist',
+			prefix: '',
+		})
+	)
 	.listen(3000);
 
-console.log(
-	`🦊 Elysia is running at ${_app.server?.hostname}:${_app.server?.port}`
-);
+wgManager.start();
+
+export type App = typeof _app;
+
+console.log(`🦊 Elysia is running at ${_app.server?.hostname}:${_app.server?.port}`);

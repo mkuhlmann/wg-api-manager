@@ -1,11 +1,5 @@
 import { relations } from 'drizzle-orm';
-import {
-	integer,
-	text,
-	pgTable,
-	timestamp,
-	AnyPgColumn,
-} from 'drizzle-orm/pg-core';
+import { integer, text, pgTable, timestamp, AnyPgColumn, boolean } from 'drizzle-orm/pg-core';
 import { nanoid } from 'nanoid';
 
 export const serverPeersTable = pgTable('serverPeers', {
