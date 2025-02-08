@@ -6,22 +6,22 @@ I created this project to manage an automated large scale wireguard vpn for thin
 
 ## Features
 
--   Create and manage **multiple** WireGuard VPN configurations
--   **No complex environment variables or configuration files**
--   Automated ip allocation based on CIDR-subnet
--   Supports multiple servers and endpoints
--   Primarily designed to use api
--   Optionally provides simple ui for managing configurations
--   Automatically generate client configurations (including QR codes)
--   Traffic stats
--   Authenticated with administration, server and peer token
+- Create and manage **multiple** WireGuard VPN configurations
+- **No complex environment variables or configuration files**
+- Automated ip allocation based on CIDR-subnet
+- Supports multiple servers and endpoints
+- Primarily designed to use api
+- Optionally provides simple ui for managing configurations
+- Automatically generate client configurations (including QR codes)
+- Traffic stats
+- Authenticated with administration, server and peer token
 
 ## Planned Features
 
--   Redirect traffic through VPN
--   Testing still missing completely
--   Desktop client
--   Perspectively sso (openid connect)
+- Redirect traffic through VPN
+- Testing still missing completely
+- Desktop client
+- Perspectively sso (openid connect)
 
 ## Installation
 
@@ -62,7 +62,7 @@ docker run -d \
   --sysctl 'net.ipv4.conf.all.src_valid_mark=1' \
   --sysctl 'net.ipv4.ip_forward=1' \
   --restart unless-stopped \
-  ghcr.io/mkuhlmann/wg-api-manager:main
+  ghcr.io/mkuhlmann/wg-api-manager:latest
 ```
 
 #### Via docker-compose
