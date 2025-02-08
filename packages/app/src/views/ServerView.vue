@@ -2,6 +2,9 @@
 	<h1 class="text-2xl font-bold mb-4">Server</h1>
 
 	<div class="grid grid-cols-6 gap-5" v-if="server">
+		<PeerModal v-model:visible="showAddPeerModal" :server="server" />
+		<PeerModal v-model:visible="showEditPeerModal" :peer="selectedPeer" :server="server" />
+
 		<Card>
 			<template #title>{{ server.friendlyName ?? server.id }}</template>
 			<template #content>
@@ -19,13 +22,30 @@
 								{{ server.wgEndpoint }}
 							</td>
 						</tr>
+						<tr>
+							<td>Listen Port</td>
+							<td>
+								{{ server.wgListenPort }}
+							</td>
+						</tr>
+						<tr>
+							<td>CIDR Range</td>
+							<td>
+								{{ server.cidrRange }}
+							</td>
+						</tr>
 					</tbody>
 				</table>
 			</template>
 		</Card>
 	</div>
+	<div class="flex gap-5 items-center my-4">
+		<h1 class="text-2xl font-bold">Peers</h1>
 
-	<h1 class="text-2xl font-bold my-4">Peers</h1>
+		<Button label="Add Peer" @click="showAddPeerModal = true">
+			<Icon><AddIcon /></Icon>
+		</Button>
+	</div>
 
 	<div class="grid grid-cols-6 gap-5">
 		<div v-for="peer in peers">
@@ -76,6 +96,12 @@
 						<Button @click="showConfig(peer.id)">
 							<Icon><CodeIcon /></Icon>
 						</Button>
+						<Button @click="editPeer(peer)" severity="warn">
+							<Icon><EditIcon /></Icon>
+						</Button>
+						<Button @click="deletePeer(peer.id)" severity="danger">
+							<Icon><DeleteIcon /></Icon>
+						</Button>
 					</div>
 				</template>
 			</Card>
@@ -101,21 +127,28 @@
 
 <script setup lang="ts">
 import { queryServer, queryServerPeers, queryServers } from '@app/queries/queryServers';
-import { useQueries, useQuery } from '@tanstack/vue-query';
+import { useQueries, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { Button, Card, Dialog } from 'primevue';
 import { useRoute, useRouter } from 'vue-router';
 
 import QrCodeIcon from '@vicons/carbon/QrCode';
 import CodeIcon from '@vicons/carbon/Code';
+import EditIcon from '@vicons/carbon/Edit';
+import AddIcon from '@vicons/carbon/AddAlt';
+import DeleteIcon from '@vicons/carbon/Delete';
 import { Icon } from '@vicons/utils';
 import { ref } from 'vue';
 import { api } from '@app/queries/edenClient';
 import QrcodeVue from 'qrcode.vue';
+import PeerModal from '@app/components/PeerModal.vue';
+import type { Peer } from '@server/db/schema';
 
 const route = useRoute();
 
 const { data: server } = useQuery(queryServer(route.params.id as string));
 const { data: peers } = useQuery(queryServerPeers(route.params.id as string));
+
+const queryClient = useQueryClient();
 
 const modalQrCode = ref(false);
 const modalConfig = ref(false);
@@ -143,6 +176,23 @@ const copyConfig = async () => {
 	setTimeout(() => {
 		showCopiedToClipboard.value = false;
 	}, 2000);
+};
+
+const showAddPeerModal = ref(false);
+const showEditPeerModal = ref(false);
+const selectedPeer = ref<Peer>();
+
+const editPeer = (peer: Peer) => {
+	selectedPeer.value = peer;
+	showEditPeerModal.value = true;
+};
+
+const deletePeer = async (peerId: string) => {
+	await api.wg
+		.servers({ id: route.params.id as string })
+		.peers({ peerId: peerId })
+		.delete();
+	await queryClient.invalidateQueries(queryServerPeers(route.params.id as string));
 };
 </script>
 

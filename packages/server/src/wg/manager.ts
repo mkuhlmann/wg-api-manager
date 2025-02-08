@@ -26,9 +26,8 @@ const constructWgManager = () => {
 		loop();
 	};
 
-	const loop = async () => {
+	const refreshInfo = async () => {
 		log.info('Checking servers');
-
 		for (const server of servers) {
 			const wgShowResult = await wgShow(server.interfaceName);
 
@@ -48,7 +47,10 @@ const constructWgManager = () => {
 				};
 			}
 		}
+	};
 
+	const loop = async () => {
+		refreshInfo();
 		setTimeout(loop, 30000);
 	};
 

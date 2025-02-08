@@ -1,67 +1,68 @@
 import { relations } from 'drizzle-orm';
-import { integer, text, pgTable, timestamp, AnyPgColumn, boolean } from 'drizzle-orm/pg-core';
+import { integer, text, sqliteTable } from 'drizzle-orm/sqlite-core';
 import { nanoid } from 'nanoid';
 
-export const serverPeersTable = pgTable('serverPeers', {
-	id: text()
+export const serverPeersTable = sqliteTable('serverPeers', {
+	id: text('id')
 		.primaryKey()
 		.$defaultFn(() => nanoid()),
 
-	createdAt: timestamp().notNull().defaultNow(),
-	updatedAt: timestamp()
+	createdAt: integer('createdAt', { mode: 'timestamp' })
 		.notNull()
-		.defaultNow()
-		.$onUpdate(() => new Date()),
+		.$defaultFn(() => new Date()),
 
-	friendlyName: text(),
+	updatedAt: integer('updatedAt', { mode: 'timestamp' })
+		.notNull()
+		.$defaultFn(() => new Date()),
 
-	authToken: text()
+	friendlyName: text('friendlyName'),
+
+	authToken: text('authToken')
 		.notNull()
 		.$defaultFn(() => nanoid(32)),
 
-	interfaceName: text().notNull(),
-	cidrRange: text().notNull(),
-	reservedIps: integer().notNull(),
+	interfaceName: text('interfaceName').notNull(),
+	cidrRange: text('cidrRange').notNull(),
+	reservedIps: integer('reservedIps').notNull(),
 
-	wgEndpoint: text().notNull(),
-	wgListenPort: integer().notNull(),
-	wgAddress: text().notNull(),
+	wgEndpoint: text('wgEndpoint').notNull(),
+	wgListenPort: integer('wgListenPort').notNull(),
+	wgAddress: text('wgAddress').notNull(),
 
-	wgPrivateKey: text().notNull(),
-	wgPublicKey: text().notNull(),
+	wgPrivateKey: text('wgPrivateKey').notNull(),
+	wgPublicKey: text('wgPublicKey').notNull(),
 });
 
 export type ServerPeer = typeof serverPeersTable.$inferSelect;
 
-export const peersTable = pgTable('peers', {
-	id: text()
+export const peersTable = sqliteTable('peers', {
+	id: text('id')
 		.primaryKey()
 		.$defaultFn(() => nanoid()),
 
-	createdAt: timestamp().notNull().defaultNow(),
-	updatedAt: timestamp()
+	createdAt: integer('createdAt', { mode: 'timestamp' })
 		.notNull()
-		.defaultNow()
-		.$onUpdate(() => new Date()),
+		.$defaultFn(() => new Date()),
 
-	friendlyName: text(),
+	updatedAt: integer('updatedAt', { mode: 'timestamp' })
+		.notNull()
+		.$defaultFn(() => new Date()),
 
-	authToken: text()
+	friendlyName: text('friendlyName'),
+
+	authToken: text('authToken')
 		.notNull()
 		.$defaultFn(() => nanoid(32)),
 
-	serverPeerId: text()
+	serverPeerId: text('serverPeerId')
 		.notNull()
-		.references(() => serverPeersTable.id, {
-			onDelete: 'cascade',
-			onUpdate: 'cascade',
-		}),
+		.references(() => serverPeersTable.id),
 
-	wgAddress: text().notNull(),
+	wgAddress: text('wgAddress').notNull(),
 
-	wgPrivateKey: text().notNull(),
-	wgPublicKey: text().notNull(),
-	wgPresharedKey: text(),
+	wgPrivateKey: text('wgPrivateKey').notNull(),
+	wgPublicKey: text('wgPublicKey').notNull(),
+	wgPresharedKey: text('wgPresharedKey'),
 });
 
 export const peersRelation = relations(peersTable, ({ one }) => ({

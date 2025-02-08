@@ -14,7 +14,19 @@ const execAsync = promisify(exec);
 export const cmd = async (command: string) => {
 	try {
 		log.info(`⚙️  ${command}`);
-		const { stdout, stderr } = await execAsync(command);
+		let shell = '';
+		try {
+			await execAsync('command -v bash');
+			shell = 'bash';
+		} catch {
+			try {
+				await execAsync('command -v ash');
+				shell = 'ash';
+			} catch {
+				throw new Error('Neither bash nor ash shell is available.');
+			}
+		}
+		const { stdout, stderr } = await execAsync(command, { shell });
 		return { stdout: stdout.trim(), stderr: stderr.trim() };
 	} catch (error) {
 		log.error(error);
@@ -75,8 +87,7 @@ export const startServer = async (server: ServerPeer) => {
 
 export const reloadServer = async (server: ServerPeer) => {
 	Bun.write('/tmp/' + server.interfaceName + '.conf', await generateServerConfig(server), { mode: 0o600 });
-
-	await $`wg syncconf ${server.interfaceName} <(wq-quick strip /tmp/${server.interfaceName}.conf)`;
+	await cmd(`wg syncconf ${server.interfaceName} <(wg-quick strip /tmp/${server.interfaceName}.conf)`);
 };
 
 export const stopServer = async (server: ServerPeer) => {

@@ -36,4 +36,5 @@ USER root
 EXPOSE 51820/udp
 EXPOSE 3000/tcp
 
-CMD ["bun", "--cwd", "/app/packages/server", "/app/packages/server/dist/index.js"]
+COPY supervisord.conf /etc/supervisord.conf
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]

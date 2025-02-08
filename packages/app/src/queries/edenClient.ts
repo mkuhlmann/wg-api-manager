@@ -15,8 +15,18 @@ export const eden = treaty<App>(`${location.host}`, {
 		const response = await fetch(url, options);
 		if (response.status >= 400) {
 			const clone = response.clone();
-			const data = await clone.json();
-			throw data;
+			const isJson = clone.headers.get('content-type')?.includes('application/json');
+
+			if (isJson) {
+				const json = await clone.json();
+				if (json.property) {
+					throw new Error(`${json.property}: ${json.message}`);
+				}
+				throw new Error(json.message);
+			} else {
+				const text = await clone.text();
+				throw new Error(text);
+			}
 		}
 		return response;
 	},
