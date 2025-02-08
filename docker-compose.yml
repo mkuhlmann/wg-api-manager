@@ -1,17 +1,17 @@
 services:
-    wg-api-manager:
-        image: ghcr.io/mkuhlmann/wg-api-manager:main
-        container_name: wg-api-manager
-        environment:
-            - ADMIN_TOKEN=CHANGE_ME
-        volumes:
-            - ./wg-data:/app/data
-        ports:
-            - 3000:3000
-            - 51820:51820/udp
-        cap_add:
-            - SYS_MODULE
-            - NET_ADMIN
-        sysctls:
-            - net.ipv4.conf.all.src_valid_mark=1
-            - net.ipv4.ip_forward=1
+  wg-api-manager:
+    image: ghcr.io/mkuhlmann/wg-api-manager:main
+    container_name: wg-api-manager
+    environment:
+      - ADMIN_TOKEN=CHANGE_ME
+    volumes:
+      - ./wg-data:/app/data
+    ports:
+      - 3000:3000
+      - 51820:51820/udp
+    cap_add:
+      - SYS_MODULE
+      - NET_ADMIN
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv4.ip_forward=1
