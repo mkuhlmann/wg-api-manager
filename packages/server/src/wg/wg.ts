@@ -4,7 +4,23 @@ import { db } from '../db';
 import { eq } from 'drizzle-orm';
 import { createLog } from '@server/lib/log';
 
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
 const log = createLog('wg');
+
+const execAsync = promisify(exec);
+
+export const cmd = async (command: string) => {
+	try {
+		log.info(`⚙️  ${command}`);
+		const { stdout, stderr } = await execAsync(command);
+		return { stdout: stdout.trim(), stderr: stderr.trim() };
+	} catch (error) {
+		log.error(error);
+		throw error;
+	}
+};
 
 export const wgGenKey = async () => {
 	return (await $`wg genkey`.text()).trim();
@@ -53,19 +69,18 @@ export const isInterfaceUp = async (interfaceName: string) => {
 };
 
 export const startServer = async (server: ServerPeer) => {
-	Bun.write('/tmp/' + server.interfaceName + '.conf', await generateServerConfig(server));
-	await $`wg-quick up /tmp/${server.interfaceName}.conf`;
+	Bun.write('/tmp/' + server.interfaceName + '.conf', await generateServerConfig(server), { mode: 0o600 });
+	await cmd(`wg-quick up /tmp/${server.interfaceName}.conf`);
 };
 
 export const reloadServer = async (server: ServerPeer) => {
-	Bun.write('/tmp/' + server.interfaceName + '.conf', await generateServerConfig(server));
+	Bun.write('/tmp/' + server.interfaceName + '.conf', await generateServerConfig(server), { mode: 0o600 });
 
 	await $`wg syncconf ${server.interfaceName} <(wq-quick strip /tmp/${server.interfaceName}.conf)`;
 };
 
 export const stopServer = async (server: ServerPeer) => {
-	//await $`wg-quick down ${server.interfaceName}`;
-	await $`ip link delete dev ${server.interfaceName}`;
+	await cmd(`ip link delete dev ${server.interfaceName}`);
 };
 
 export const generateServerConfig = async (server: ServerPeer) => {
@@ -76,7 +91,8 @@ export const generateServerConfig = async (server: ServerPeer) => {
 	let config = `[Interface]
 PrivateKey = ${server.wgPrivateKey}
 Address = ${server.wgAddress.includes('/') ? server.wgAddress : server.wgAddress + '/24'}
-ListenPort = ${server.wgListenPort}`;
+ListenPort = ${server.wgListenPort}
+`;
 
 	for (const peer of peers) {
 		config += `

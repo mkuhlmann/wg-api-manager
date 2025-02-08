@@ -3,6 +3,7 @@
 	"version": "1.0.50",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
+		"build": "bun build src/index.ts --outdir dist --target bun",
 		"dev": "bun run --watch src/index.ts",
 		"start": "bun run src/index.ts"
 	},
@@ -10,14 +11,13 @@
 		"@elysiajs/eden": "^1.2.0",
 		"@elysiajs/static": "^1.2.0",
 		"@elysiajs/swagger": "^1.2.0",
+		"@thanhhoajs/logger": "^1.0.7",
 		"@types/pg": "^8.11.10",
 		"drizzle-orm": "^0.38.3",
 		"elysia": "^1.2.11",
 		"ip-cidr": "^4.0.2",
 		"nanoid": "^5.0.9",
-		"pg": "^8.13.1",
-		"pino": "^9.6.0",
-		"pino-pretty": "^13.0.0"
+		"pg": "^8.13.1"
 	},
 	"devDependencies": {
 		"bun-types": "latest",

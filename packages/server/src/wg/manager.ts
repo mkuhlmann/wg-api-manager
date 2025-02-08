@@ -22,6 +22,8 @@ const constructWgManager = () => {
 			log.info(`Starting server ${server.interfaceName}`);
 			await startServer(server);
 		}
+
+		loop();
 	};
 
 	const loop = async () => {
@@ -52,8 +54,6 @@ const constructWgManager = () => {
 
 	const start = () => {
 		_start();
-
-		setTimeout(loop, 30000);
 	};
 
 	return { start, peerInfo };

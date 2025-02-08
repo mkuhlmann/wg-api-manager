@@ -1,12 +1,5 @@
-import pino from 'pino';
+import { Logger } from '@thanhhoajs/logger';
 
-export const log = pino({
-	transport: {
-		target: 'pino-pretty',
-		options: {
-			colorize: true,
-		},
-	},
-});
-
-export const createLog = (name: string) => log.child({}, { msgPrefix: `[${name}] ` });
+export const createLog = (name: string) => {
+	return Logger.get(name);
+};

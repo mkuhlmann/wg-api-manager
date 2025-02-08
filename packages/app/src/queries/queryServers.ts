@@ -26,4 +26,5 @@ export const queryServerPeers = (id: string) =>
 			const resp = await api.wg.servers({ id: id }).peers.get();
 			return resp.data;
 		},
+		refetchInterval: 5000,
 	});

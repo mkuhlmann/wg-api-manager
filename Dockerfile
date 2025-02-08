@@ -11,6 +11,7 @@ RUN bun install --frozen-lockfile
 COPY . /build
 
 RUN bun run --cwd ./packages/app build-only
+RUN bun run --cwd ./packages/server build
 
 FROM oven/bun:1.2.2-alpine
 
@@ -26,14 +27,7 @@ RUN apk add --no-cache \
 COPY . /app
 WORKDIR /app
 
-
-COPY ./package.json /app
-COPY ./bun.lock /app
-COPY ./packages/server/package.json /app/packages/server/
- 
-RUN bun install --frozen-lockfile
-
-COPY ./packages/server /app/packages/server
+COPY --from=build-stage /build/packages/server/dist /app/packages/server/dist
 COPY --from=build-stage /build/packages/app/dist /app/packages/app/dist
 
 USER root
@@ -42,4 +36,4 @@ USER root
 EXPOSE 51820/udp
 EXPOSE 3000/tcp
 
-CMD ["bun", "start"]
+CMD ["bun", "--cwd", "/app/packages/server", "/app/packages/server/dist/index.js"]

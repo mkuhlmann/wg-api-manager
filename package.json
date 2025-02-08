@@ -1,14 +1,16 @@
 {
-	"name": "wg-manager",
-	"scripts": {
-		"dev": "bun --filter '*' dev",
-		"start": "bun --cwd packages/server start"
-	},
-	"workspaces": [
-		"packages/*"
-	],
-	"dependencies": {},
-	"trustedDependencies": [
-		"es5-ext"
-	]
+  "name": "wg-manager",
+  "scripts": {
+    "dev": "bun --filter '*' dev",
+    "start": "bun --cwd packages/server start"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "dependencies": {},
+  "trustedDependencies": [
+    "es5-ext",
+    "esbuild",
+    "vue-demi"
+  ]
 }

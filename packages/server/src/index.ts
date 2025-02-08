@@ -8,6 +8,9 @@ import { eq, or, and } from 'drizzle-orm';
 import { auth } from './api/auth';
 import { wgManager } from './wg/manager';
 import staticPlugin from '@elysiajs/static';
+import { createLog } from './lib/log';
+
+const log = createLog('http');
 
 const _app = new Elysia()
 	.use(
@@ -24,6 +27,9 @@ const _app = new Elysia()
 			},
 		})
 	)
+	.onBeforeHandle(({ request, server }) => {
+		log.info(`${request.method} ${request.url} ${server?.requestIP(request)?.address}`);
+	})
 	.use(auth)
 	.group('/api/v1', (app) =>
 		app
@@ -274,4 +280,4 @@ wgManager.start();
 
 export type App = typeof _app;
 
-console.log(`🦊 Elysia is running at ${_app.server?.hostname}:${_app.server?.port}`);
+log.info(`🦊 api ist running at ${_app.server?.hostname}:${_app.server?.port}`);
