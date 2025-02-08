@@ -2,6 +2,8 @@ name: test
 
 on:
   workflow_call:
+  push:
+  pull_request:
 
 jobs:
   test:
@@ -15,7 +17,7 @@ jobs:
       - name: Setup bun
         uses: oven-sh/setup-bun@v2
         with:
-          version: 1.2.2
+          bun-version: 1.2.2
 
       - run: bun install
         working-directory: ./packages/server

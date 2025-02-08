@@ -3,10 +3,11 @@ import { db } from '../db';
 import { Peer, peersTable, serverPeersTable } from '../db/schema';
 import IPCIDR from 'ip-cidr';
 import { eq, and, or } from 'drizzle-orm';
-import { generatePeerConfig, reloadServer, wgDerivePublicKey, wgGenKey, wgGenPsk } from '../wg/shell';
+import { reloadServer, wgDerivePublicKey, wgGenKey, wgGenPsk } from '../wg/shell';
 import { wgManager } from '../wg/manager';
 import { auth } from './auth';
 import { createLog } from '@server/lib/log';
+import { generatePeerConfig } from '@server/wg/config';
 
 const log = createLog('http');
 
