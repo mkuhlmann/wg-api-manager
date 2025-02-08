@@ -33,6 +33,8 @@ Generate an unique and cryptographically secure administration token.
 openssl rand -base64 32
 ```
 
+ℹ️ if no token is provided (or is too short), a random token will be generated on startup and printed to the console.
+
 ### 2. Run wg-api-manager
 
 wg-api-manager stores a sqlite database in the `/app/data` directory. Make sure to mount a volume to persist the database.
