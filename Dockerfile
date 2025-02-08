@@ -22,12 +22,13 @@ RUN apk add --no-cache \
     libcap-utils \
     net-tools \
     openresolv \
-    wireguard-tools
+    wireguard-tools \
+    supervisor
 
-COPY . /app
 WORKDIR /app
 
 COPY --from=build-stage /build/packages/server/dist /app/packages/server/dist
+COPY --from=build-stage /build/packages/server/drizzle /app/packages/server/drizzle
 COPY --from=build-stage /build/packages/app/dist /app/packages/app/dist
 
 USER root

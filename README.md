@@ -1,6 +1,6 @@
 # wg-api-manager
 
-ℹ️ **This project is still in development but useable.**
+> ℹ️ **This project is still in development but useable.**
 
 I created this project to manage an automated large scale wireguard vpn for thin clients in multiple locations. I also needed support for multiple wireguard servers, which as far as I know no other project supports. The project is primarily designed to be used with an api, but also provides a simple ui for managing configurations. I already use wg-api-manager in production use, but keep in mind it is still in development, opinionated, lacks testing and documention. I am happy about any feedback or pull-requests.
 
@@ -33,7 +33,7 @@ Generate an unique and cryptographically secure administration token.
 openssl rand -base64 32
 ```
 
-ℹ️ if no token is provided (or is too short), a random token will be generated on startup and printed to the console.
+> ℹ️ if no token is provided (or is too short), a random token will be generated on startup and printed to the console.
 
 ### 2. Run wg-api-manager
 
