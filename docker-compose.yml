@@ -1,9 +1,11 @@
 services:
     wg-api-manager:
-        image: wg
+        image: ghcr.io/mkuhlmann/wg-api-manager:main
         container_name: wg-api-manager
         environment:
             - ADMIN_TOKEN=CHANGE_ME
+        volumes:
+            - ./wg-data:/app/data
         ports:
             - 3000:3000
             - 51820:51820/udp

@@ -3,7 +3,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
 export const useAuthStore = defineStore('authStore', () => {
-	const authToken = ref<string | null>('SpPAxt5HtvkAS4L4TKcUMfZpy3Rojp2HasIOa2');
+	const authToken = ref<string | null>(null);
 	const authTokenValidated = ref<boolean>(false);
 
 	async function login(token: string) {
