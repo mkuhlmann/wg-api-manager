@@ -1,11 +1,12 @@
-import { Elysia, t } from 'elysia';
+import { Elysia, error, t } from 'elysia';
 import { db } from '../db';
 import { serverPeersTable } from '../db/schema';
 import IPCIDR from 'ip-cidr';
 import { eq, or } from 'drizzle-orm';
-import { generateServerConfig, reloadServer, startServer, wgDerivePublicKey, wgGenKey } from '../wg/wg';
+import { reloadServer, startServer, wgDerivePublicKey, wgGenKey } from '../wg/shell';
 import { auth } from './auth';
 import { createLog } from '@server/lib/log';
+import { generateServerConfig } from '@server/wg/config';
 
 const log = createLog('http');
 
@@ -27,11 +28,11 @@ export const serversRoutes = new Elysia()
 			const publicKey = await wgDerivePublicKey(privateKey);
 
 			if (!IPCIDR.isValidCIDR(body.cidrRange)) {
-				throw new Error('Invalid CIDR range');
+				throw error(400, 'Invalid CIDR range');
 			}
 
 			if (!new IPCIDR(body.cidrRange).contains(body.wgAddress)) {
-				throw new Error('wgAddress is not in CIDR range');
+				throw error(400, 'wgAddress is not in CIDR range');
 			}
 
 			const peer = await db
@@ -78,14 +79,14 @@ export const serversRoutes = new Elysia()
 			});
 
 			if (!server) {
-				throw new Error('Server not found');
+				throw error(404, 'Server not found');
 			}
 
 			return server;
 		},
 		{
 			params: t.Object({ id: t.String() }),
-			verifyAuth: { scope: 'admin' },
+			verifyAuth: { scope: 'server' },
 		}
 	)
 	.patch(
@@ -96,30 +97,18 @@ export const serversRoutes = new Elysia()
 			});
 
 			if (!server) {
-				throw new Error('Server not found');
+				throw error(404, 'Server not found');
 			}
 
 			if (body.cidrRange && !IPCIDR.isValidCIDR(body.cidrRange)) {
-				throw new Error('Invalid CIDR range');
+				throw error(400, 'Invalid CIDR range');
 			}
 
 			if (body.wgAddress && !new IPCIDR(body.cidrRange ?? server.cidrRange).contains(body.wgAddress)) {
-				throw new Error('wgAddress is not in CIDR range');
+				throw error(400, 'wgAddress is not in CIDR range');
 			}
 
-			const updatedServer = await db
-				.update(serverPeersTable)
-				.set({
-					friendlyName: body.friendlyName ?? server.friendlyName,
-					interfaceName: body.interfaceName ?? server.interfaceName,
-					reservedIps: body.reservedIps ?? server.reservedIps,
-					wgAddress: body.wgAddress ?? server.wgAddress,
-					wgEndpoint: body.wgEndpoint ?? server.wgEndpoint,
-					wgListenPort: body.wgListenPort ?? server.wgListenPort,
-					cidrRange: body.cidrRange ?? server.cidrRange,
-				})
-				.where(eq(serverPeersTable.id, params.id))
-				.returning();
+			const updatedServer = await db.update(serverPeersTable).set(body).where(eq(serverPeersTable.id, params.id)).returning();
 
 			log.info(`Updated server ${updatedServer[0].id}`);
 			reloadServer(updatedServer[0]);
@@ -139,7 +128,7 @@ export const serversRoutes = new Elysia()
 			params: t.Object({
 				id: t.String(),
 			}),
-			verifyAuth: { scope: 'admin' },
+			verifyAuth: { scope: 'server' },
 		}
 	)
 	.get(

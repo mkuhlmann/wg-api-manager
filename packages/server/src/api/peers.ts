@@ -1,12 +1,10 @@
-import { Elysia, t } from 'elysia';
-import { db } from '../db';
-import { Peer, peersTable, serverPeersTable } from '../db/schema';
-import IPCIDR from 'ip-cidr';
+import { Elysia, error, t } from 'elysia';
+import { db } from '@server/db';
+import { peersTable } from '../db/schema';
 import { eq, and, or } from 'drizzle-orm';
-import { generatePeerConfig, reloadServer, wgDerivePublicKey, wgGenKey, wgGenPsk } from '../wg/wg';
-import { wgManager } from '../wg/manager';
 import { auth } from './auth';
 import { createLog } from '@server/lib/log';
+import { generatePeerConfig } from '@server/wg/config';
 
 const log = createLog('http');
 
@@ -18,7 +16,7 @@ export const peersRoutes = new Elysia().use(auth).get(
 		});
 
 		if (!peer) {
-			throw new Error('Peer not found');
+			throw error(404, 'Peer not found');
 		}
 
 		return generatePeerConfig(peer);

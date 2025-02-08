@@ -3,16 +3,19 @@ import { migrate } from 'drizzle-orm/bun-sqlite/migrator';
 import { Database } from 'bun:sqlite';
 import * as schema from './schema';
 import { existsSync, mkdirSync } from 'fs';
-import { join } from 'path';
+import { dirname } from 'path';
 
-const dbPath = '../../data';
-const dbFile = join(dbPath, 'sqlite.db');
+if (!process.env.DATABASE_PATH) {
+	process.env.DATABASE_PATH = ':memory:';
+} else {
+	const dbDirectory = dirname(process.env.DATABASE_PATH);
 
-if (!existsSync(dbPath)) {
-	mkdirSync(dbPath, { recursive: true });
+	if (!existsSync(dbDirectory)) {
+		mkdirSync(dbDirectory, { recursive: true });
+	}
 }
 
-const sqlite = new Database(dbFile);
+const sqlite = new Database(process.env.DATABASE_PATH);
 
 export const db = drizzle({
 	client: sqlite,
