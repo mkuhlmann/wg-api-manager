@@ -1,7 +1,10 @@
+process.env.DATABASE_PATH = ':memory:';
+
 import { migrateDb } from '@server/db';
 import { mock } from 'bun:test';
 
 await migrateDb();
+
 process.env.ADMIN_TOKEN = 'adminToken';
 
 mock.module('@server/wg/shell', () => {

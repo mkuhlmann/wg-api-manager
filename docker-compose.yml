@@ -1,6 +1,6 @@
 services:
   wg-api-manager:
-    image: ghcr.io/mkuhlmann/wg-api-manager:main
+    image: ghcr.io/mkuhlmann/wg-api-manager:latest
     container_name: wg-api-manager
     environment:
       - ADMIN_TOKEN=CHANGE_ME
