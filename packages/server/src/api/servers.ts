@@ -14,7 +14,7 @@ async function isPortInUse(port: number, excludeServerId?: string) {
 	const existing = await db.query.serverPeersTable.findFirst({
 		where: excludeServerId ? and(eq(serverPeersTable.wgListenPort, port), ne(serverPeersTable.id, excludeServerId)) : eq(serverPeersTable.wgListenPort, port),
 	});
-	return existing !== null;
+	return !!existing;
 }
 
 export const serversRoutes = new Elysia()

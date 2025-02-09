@@ -45,7 +45,7 @@ describe('serversRouter', () => {
 				cidrRange: '192.168.1.0/24',
 				reservedIps: 100,
 				wgAddress: '192.168.1.1',
-				wgListenPort: 51821,
+				wgListenPort: 123,
 				wgEndpoint: 'newhost:51821',
 			};
 			const response = await app.handle(
@@ -67,7 +67,7 @@ describe('serversRouter', () => {
 				cidrRange: '192.168.1.0/24',
 				reservedIps: 100,
 				wgAddress: '192.168.1.1',
-				wgListenPort: 51821,
+				wgListenPort: 1234,
 				wgEndpoint: 'newhost:51821',
 			};
 			const response = await app.handle(
@@ -116,6 +116,18 @@ describe('serversRouter', () => {
 			expect(response.status).toBe(200);
 			const result = await response.json();
 			expect(result[0].friendlyName).toBe('Updated Server');
+		});
+
+		it('PATCH should fail if port already in use (server token)', async () => {
+			const patchBody = { wgListenPort: 123 };
+			const response = await app.handle(
+				new Request('http://localhost/wg/servers/serversRouter-server', {
+					method: 'PATCH',
+					headers: { authorization: 'Bearer serverToken', 'content-type': 'application/json' },
+					body: JSON.stringify(patchBody),
+				})
+			);
+			expect(response.status).toBe(400);
 		});
 	});
 
