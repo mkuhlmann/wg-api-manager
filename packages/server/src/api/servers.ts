@@ -2,13 +2,20 @@ import { Elysia, error, t } from 'elysia';
 import { db } from '../db';
 import { serverPeersTable } from '../db/schema';
 import IPCIDR from 'ip-cidr';
-import { eq, or } from 'drizzle-orm';
+import { eq, or, and, ne } from 'drizzle-orm';
 import { reloadServer, startServer, wgDerivePublicKey, wgGenKey } from '../wg/shell';
 import { auth } from './auth';
 import { createLog } from '@server/lib/log';
 import { generateServerConfig } from '@server/wg/config';
 
 const log = createLog('http');
+
+async function isPortInUse(port: number, excludeServerId?: string) {
+	const existing = await db.query.serverPeersTable.findFirst({
+		where: excludeServerId ? and(eq(serverPeersTable.wgListenPort, port), ne(serverPeersTable.id, excludeServerId)) : eq(serverPeersTable.wgListenPort, port),
+	});
+	return existing !== null;
+}
 
 export const serversRoutes = new Elysia()
 	.use(auth)
@@ -24,6 +31,10 @@ export const serversRoutes = new Elysia()
 	.post(
 		'/wg/servers',
 		async ({ body }) => {
+			if (await isPortInUse(body.wgListenPort)) {
+				throw error(400, 'Port already in use by another server');
+			}
+
 			const privateKey = await wgGenKey();
 			const publicKey = await wgDerivePublicKey(privateKey);
 
@@ -98,6 +109,10 @@ export const serversRoutes = new Elysia()
 
 			if (!server) {
 				throw error(404, 'Server not found');
+			}
+
+			if (body.wgListenPort && (await isPortInUse(body.wgListenPort, params.id))) {
+				throw error(400, 'Port already in use by another server');
 			}
 
 			if (body.cidrRange && !IPCIDR.isValidCIDR(body.cidrRange)) {
