@@ -49,16 +49,31 @@ const constructWgManager = () => {
 		}
 	};
 
+	let loopTimeout: Timer | null = null;
+
 	const loop = async () => {
 		refreshInfo();
-		setTimeout(loop, 30000);
+		loopTimeout = setTimeout(loop, 30000);
 	};
 
 	const start = () => {
 		_start();
 	};
 
-	return { start, peerInfo };
+	const stop = async () => {
+		if (loopTimeout) {
+			clearTimeout(loopTimeout);
+		}
+
+		for (const server of servers) {
+			if (await isInterfaceUp(server.interfaceName)) {
+				log.info(`Stopping server ${server.interfaceName}`);
+				await stopServer(server);
+			}
+		}
+	};
+
+	return { start, stop, peerInfo };
 };
 
 export const wgManager = constructWgManager();

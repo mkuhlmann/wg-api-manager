@@ -64,6 +64,21 @@ const main = async () => {
 	httpLog.info(`api ist running at ${_app.server?.hostname}:${_app.server?.port}`);
 };
 
+let stopping = false;
+
+const exit = async () => {
+	if (stopping) return;
+	stopping = true;
+	log.info('Stopping wireguard manager');
+	await wgManager.stop();
+
+	process.exit();
+};
+
+process.on('SIGINT', exit);
+process.on('SIGTERM', exit);
+process.on('beforeExit', exit);
+
 main();
 
 export type App = typeof _app;
