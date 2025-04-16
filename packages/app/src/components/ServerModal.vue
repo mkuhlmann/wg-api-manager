@@ -1,45 +1,45 @@
 <template>
-	<Dialog v-model:visible="visible" :modal="true" :header="isEditMode ? 'Edit Server' : 'Add Server'" :style="{ width: '50vw' }">
-		<form @submit.prevent="handleSubmit" class="flex flex-col gap-4">
+	<Dialog v-model:visible="visible" :modal="true" :header="isEditMode ? 'Edit Server' : 'Add Server'" :style="{ width: '40vw' }" class="rounded-2xl">
+		<form @submit.prevent="handleSubmit" class="flex flex-col gap-6 p-2">
 			<div class="field">
-				<label for="friendlyName" class="mb-1">Friendly Name</label>
-				<InputText id="friendlyName" v-model="form.friendlyName" class="w-full" />
-				<small class="text-gray-500">A friendly name for the server.</small>
+				<label for="friendlyName" class="mb-1 font-semibold text-sky-500">Friendly Name</label>
+				<InputText id="friendlyName" v-model="form.friendlyName" class="w-full !rounded-lg" />
+				<small class="text-gray-400">A friendly name for the server.</small>
 			</div>
 			<div class="field">
-				<label for="interfaceName" class="mb-1">Interface Name</label>
-				<InputText id="interfaceName" v-model="form.interfaceName" class="w-full" required />
-				<small class="text-gray-500">The name of the network interface, regex: /^[a-zA-Z0-9_=+.-]{1,15}$/.</small>
+				<label for="interfaceName" class="mb-1 font-semibold text-sky-500">Interface Name</label>
+				<InputText id="interfaceName" v-model="form.interfaceName" class="w-full !rounded-lg" required />
+				<small class="text-gray-400">The name of the network interface, regex: /^[a-zA-Z0-9_=+.-]{1,15}$/.</small>
 			</div>
 			<div class="field">
-				<label for="wgAddress" class="mb-1">WireGuard Address</label>
-				<InputText id="wgAddress" v-model="form.wgAddress" class="w-full" required />
-				<small class="text-gray-500">The ip of the WireGuard server, e.g. 10.8.0.1</small>
+				<label for="wgAddress" class="mb-1 font-semibold text-sky-500">WireGuard Address</label>
+				<InputText id="wgAddress" v-model="form.wgAddress" class="w-full !rounded-lg" required />
+				<small class="text-gray-400">The ip of the WireGuard server, e.g. 10.8.0.1</small>
 			</div>
 			<div class="field">
-				<label for="wgEndpoint" class="mb-1">WireGuard Endpoint</label>
-				<InputText id="wgEndpoint" v-model="form.wgEndpoint" class="w-full" required />
-				<small class="text-gray-500">The endpoint address for the WireGuard server.</small>
+				<label for="wgEndpoint" class="mb-1 font-semibold text-sky-500">WireGuard Endpoint</label>
+				<InputText id="wgEndpoint" v-model="form.wgEndpoint" class="w-full !rounded-lg" required />
+				<small class="text-gray-400">The endpoint address for the WireGuard server.</small>
 			</div>
 			<div class="field">
-				<label for="wgListenPort" class="mb-1">Listen Port</label>
-				<InputNumber id="wgListenPort" v-model="form.wgListenPort" class="w-full" required />
-				<small class="text-gray-500">The port on which the WireGuard server will listen.</small>
+				<label for="wgListenPort" class="mb-1 font-semibold text-sky-500">Listen Port</label>
+				<InputNumber id="wgListenPort" v-model="form.wgListenPort" class="w-full !rounded-lg" required />
+				<small class="text-gray-400">The port on which the WireGuard server will listen.</small>
 			</div>
 			<div class="field">
-				<label for="cidrRange" class="mb-1">CIDR Range</label>
-				<InputText id="cidrRange" v-model="form.cidrRange" class="w-full" required />
-				<small class="text-gray-500">The CIDR range for the server's network, regex: /^(?:\d{1,3}\.){3}\d{1,3}\/(?:[0-9]|[1-2][0-9]|3[0-2])$/.</small>
+				<label for="cidrRange" class="mb-1 font-semibold text-sky-500">CIDR Range</label>
+				<InputText id="cidrRange" v-model="form.cidrRange" class="w-full !rounded-lg" required />
+				<small class="text-gray-400">The CIDR range for the server's network, regex: /^(?:\d{1,3}\.){3}\d{1,3}\/(?:[0-9]|[1-2][0-9]|3[0-2])$/.</small>
 				<span v-if="!isCidrValid" class="text-red-500">Invalid CIDR range, e.g. 10.8.0.0/24</span>
 			</div>
 			<div class="field">
-				<label for="reservedIps" class="mb-1">Reserved IPs</label>
-				<InputNumber id="reservedIps" v-model="form.reservedIps" class="w-full" required />
-				<small class="text-gray-500">The number of IPs to skip until allocating clients.</small>
+				<label for="reservedIps" class="mb-1 font-semibold text-sky-500">Reserved IPs</label>
+				<InputNumber id="reservedIps" v-model="form.reservedIps" class="w-full !rounded-lg" required />
+				<small class="text-gray-400">The number of IPs to skip until allocating clients.</small>
 			</div>
-			<div class="flex justify-end gap-2">
-				<Button label="Cancel" @click="visible = false" outlined />
-				<Button :label="isEditMode ? 'Save Changes' : 'Add Server'" type="submit" />
+			<div class="flex justify-end gap-2 mt-4">
+				<Button label="Cancel" @click="visible = false" outlined class="!rounded-lg" />
+				<Button :label="isEditMode ? 'Save Changes' : 'Add Server'" type="submit" class="!bg-blue-600 hover:!bg-blue-700 text-white font-semibold shadow-lg rounded-lg px-4 py-2" />
 			</div>
 		</form>
 	</Dialog>
@@ -148,3 +148,18 @@ const handleSubmit = () => {
 	}
 };
 </script>
+
+<style scoped>
+:deep(.p-dialog) {
+	border-radius: 1.5rem;
+}
+:deep(.p-inputtext),
+:deep(.p-inputnumber-input) {
+	border-radius: 0.75rem;
+}
+:deep(.p-button) {
+	border-radius: 0.75rem;
+	font-weight: 600;
+	transition: background 0.2s, color 0.2s;
+}
+</style>

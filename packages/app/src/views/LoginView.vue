@@ -1,15 +1,13 @@
 <template>
-	<div class="">
-		<div class="flex items-center justify-center">
-			<div class="shadow-2xl bg-neutral-100 dark:bg-neutral-900 p-5 rounded-lg w-[600px]">
-				<h1 class="text-2xl font-bold text-center mb-4">wg-manager</h1>
-				<form @submit.prevent="handleLogin">
-					<div class="mb-4">
-						<Password v-model="password" placeholder="Adminstration Token" :feedback="false" toggleMask />
-					</div>
-					<Button label="Login" class="w-full" @click="handleLogin" />
-				</form>
-			</div>
+	<div class="flex items-center justify-center mt-10">
+		<div class="shadow-2xl bg-neutral-100 dark:bg-gray-800 p-8 w-full max-w-xl flex flex-col gap-6">
+			<h1 class="text-3xl font-thin text-center text-sky-500 mb-2 tracking-tight drop-shadow">wg-api-manager</h1>
+			<form @submit.prevent="handleLogin" class="flex flex-col gap-4">
+				<div>
+					<Password v-model="password" placeholder="Administration Token" :feedback="false" toggleMask class="w-full" />
+				</div>
+				<Button label="Login" class="w-full px-4 py-2 text-lg" @click="handleLogin" />
+			</form>
 		</div>
 	</div>
 </template>
@@ -42,9 +40,9 @@ async function handleLogin() {
 }
 </script>
 
-<style>
-.p-password,
-.p-password-input {
+<style scoped>
+:deep(.p-password),
+:deep(.p-password-input) {
 	width: 100%;
 }
 </style>

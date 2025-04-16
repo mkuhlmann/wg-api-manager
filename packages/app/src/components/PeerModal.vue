@@ -1,19 +1,19 @@
 <template>
-	<Dialog v-model:visible="visible" :modal="true" :header="isEditMode ? 'Edit Peer' : 'Add Peer'">
-		<form @submit.prevent="handleSubmit" class="flex flex-col gap-4">
+	<Dialog v-model:visible="visible" :modal="true" :header="isEditMode ? 'Edit Peer' : 'Add Peer'" class="rounded-2xl">
+		<form @submit.prevent="handleSubmit" class="flex flex-col gap-6 p-2">
 			<div class="field">
-				<label for="friendlyName" class="mb-1">Friendly Name</label>
-				<InputText id="friendlyName" v-model="form.friendlyName" class="w-full" />
-				<small class="text-gray-500">A friendly name for the peer.</small>
+				<label for="friendlyName" class="mb-1 font-semibold text-sky-500">Friendly Name</label>
+				<InputText id="friendlyName" v-model="form.friendlyName" class="w-full !rounded-lg" />
+				<small class="text-gray-400">A friendly name for the peer.</small>
 			</div>
 			<div class="field">
-				<label for="wgAddress" class="mb-1">WireGuard Address</label>
-				<InputText id="wgAddress" v-model="form.wgAddress" class="w-full" />
-				<small class="text-gray-500">The IP address of the WireGuard peer, <strong>optional</strong>.</small>
+				<label for="wgAddress" class="mb-1 font-semibold text-sky-500">WireGuard Address</label>
+				<InputText id="wgAddress" v-model="form.wgAddress" class="w-full !rounded-lg" />
+				<small class="text-gray-400">The IP address of the WireGuard peer, <strong>optional</strong>.</small>
 			</div>
-			<div class="flex justify-end gap-2">
-				<Button label="Cancel" @click="visible = false" outlined />
-				<Button :label="isEditMode ? 'Save Changes' : 'Add Peer'" type="submit" />
+			<div class="flex justify-end gap-2 mt-4">
+				<Button label="Cancel" @click="visible = false" outlined class="!rounded-lg" />
+				<Button :label="isEditMode ? 'Save Changes' : 'Add Peer'" type="submit" class="!bg-blue-600 hover:!bg-blue-700 text-white font-semibold shadow-lg rounded-lg px-4 py-2" />
 			</div>
 		</form>
 	</Dialog>
@@ -114,3 +114,17 @@ const handleSubmit = () => {
 	}
 };
 </script>
+
+<style scoped>
+:deep(.p-dialog) {
+	border-radius: 1.5rem;
+}
+:deep(.p-inputtext) {
+	border-radius: 0.75rem;
+}
+:deep(.p-button) {
+	border-radius: 0.75rem;
+	font-weight: 600;
+	transition: background 0.2s, color 0.2s;
+}
+</style>
