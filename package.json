@@ -9,6 +9,7 @@
   ],
   "dependencies": {},
   "trustedDependencies": [
+    "@tailwindcss/oxide",
     "es5-ext",
     "esbuild",
     "vue-demi"

@@ -1,4 +1,4 @@
-FROM oven/bun:1.2.2-debian AS build-stage
+FROM oven/bun:1.2.23-debian AS build-stage
 
 WORKDIR /build
 
@@ -13,7 +13,7 @@ COPY . /build
 RUN bun run --cwd ./packages/app build-only
 RUN bun run --cwd ./packages/server build
 
-FROM oven/bun:1.2.2-alpine
+FROM oven/bun:1.2.23-alpine
 
 RUN apk add --no-cache \
     coredns \

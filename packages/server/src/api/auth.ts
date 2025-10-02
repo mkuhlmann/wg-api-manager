@@ -10,9 +10,9 @@ export const auth = new Elysia({ name: 'auth' }).macro({
 		}
 
 		return {
-			async beforeHandle({ headers, params, error }) {
+			async beforeHandle({ headers, params, status }) {
 				if (!headers.authorization) {
-					throw error(401);
+					return status(401);
 				}
 
 				const token = headers.authorization.split(' ')[1];
@@ -21,13 +21,11 @@ export const auth = new Elysia({ name: 'auth' }).macro({
 					return;
 				}
 
+				// @ts-expect-error
 				const id = params.id;
 				if (config.scope == 'server' && id) {
 					const server = await db.query.serverPeersTable.findFirst({
-						where: and(
-							eq(serverPeersTable.id, id),
-							eq(serverPeersTable.authToken, token)
-						),
+						where: and(eq(serverPeersTable.id, id), eq(serverPeersTable.authToken, token)),
 					});
 
 					if (server) {
@@ -37,10 +35,7 @@ export const auth = new Elysia({ name: 'auth' }).macro({
 
 				if (config.scope == 'peer' && id) {
 					const peer = await db.query.peersTable.findFirst({
-						where: and(
-							eq(peersTable.id, id),
-							eq(peersTable.authToken, token)
-						),
+						where: and(eq(peersTable.id, id), eq(peersTable.authToken, token)),
 					});
 
 					if (peer) {
@@ -48,7 +43,7 @@ export const auth = new Elysia({ name: 'auth' }).macro({
 					}
 				}
 
-				throw error(401);
+				return status(401);
 			},
 		};
 	},

@@ -43,11 +43,18 @@ const _app = new Elysia()
 			assets: '../app/dist',
 			prefix: '',
 		})
-	);
+	)
+	.onError(({ code, status, request }) => {
+		if (code == 'NOT_FOUND' && request.method == 'GET' && !request.url.startsWith('/api/')) {
+			return Bun.file('../app/dist/index.html');
+			return;
+		}
+		httpLog.error(`${code} on ${request.method} ${request.url}`);
+	});
 
 const main = async () => {
 	if (!process.env.ADMIN_TOKEN || process.env.ADMIN_TOKEN.length < 16) {
-		log.error('ADMIN_TOKEN is not set or too short, generating temporary token');
+		log.warn('ADMIN_TOKEN is not set or too short, generating temporary token');
 		process.env.ADMIN_TOKEN = nanoid(32);
 		log.info(`Generated token: ${process.env.ADMIN_TOKEN}`);
 	}

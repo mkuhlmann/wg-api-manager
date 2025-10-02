@@ -1,4 +1,4 @@
-import { Elysia, error, t } from 'elysia';
+import { Elysia, status, t } from 'elysia';
 import { db } from '../db';
 import { serverPeersTable } from '../db/schema';
 import IPCIDR from 'ip-cidr';
@@ -32,18 +32,18 @@ export const serversRoutes = new Elysia()
 		'/wg/servers',
 		async ({ body }) => {
 			if (await isPortInUse(body.wgListenPort)) {
-				throw error(400, 'Port already in use by another server');
+				return status(400, 'Port already in use by another server');
 			}
 
 			const privateKey = await wgGenKey();
 			const publicKey = await wgDerivePublicKey(privateKey);
 
 			if (!IPCIDR.isValidCIDR(body.cidrRange)) {
-				throw error(400, 'Invalid CIDR range');
+				return status(400, 'Invalid CIDR range');
 			}
 
 			if (!new IPCIDR(body.cidrRange).contains(body.wgAddress)) {
-				throw error(400, 'wgAddress is not in CIDR range');
+				return status(400, 'wgAddress is not in CIDR range');
 			}
 
 			const peer = await db
@@ -90,7 +90,7 @@ export const serversRoutes = new Elysia()
 			});
 
 			if (!server) {
-				throw error(404, 'Server not found');
+				return status(404, 'Server not found');
 			}
 
 			return server;
@@ -108,19 +108,19 @@ export const serversRoutes = new Elysia()
 			});
 
 			if (!server) {
-				throw error(404, 'Server not found');
+				return status(404, 'Server not found');
 			}
 
 			if (body.wgListenPort && (await isPortInUse(body.wgListenPort, params.id))) {
-				throw error(400, 'Port already in use by another server');
+				return status(400, 'Port already in use by another server');
 			}
 
 			if (body.cidrRange && !IPCIDR.isValidCIDR(body.cidrRange)) {
-				throw error(400, 'Invalid CIDR range');
+				return status(400, 'Invalid CIDR range');
 			}
 
 			if (body.wgAddress && !new IPCIDR(body.cidrRange ?? server.cidrRange).contains(body.wgAddress)) {
-				throw error(400, 'wgAddress is not in CIDR range');
+				return status(400, 'wgAddress is not in CIDR range');
 			}
 
 			const updatedServer = await db.update(serverPeersTable).set(body).where(eq(serverPeersTable.id, params.id)).returning();

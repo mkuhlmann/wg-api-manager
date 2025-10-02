@@ -1,4 +1,4 @@
-import { Elysia, error, t } from 'elysia';
+import { Elysia, status, t } from 'elysia';
 import { db } from '@server/db';
 import { peersTable } from '../db/schema';
 import { eq, and, or } from 'drizzle-orm';
@@ -16,7 +16,7 @@ export const peersRoutes = new Elysia().use(auth).get(
 		});
 
 		if (!peer) {
-			throw error(404, 'Peer not found');
+			return status(404, 'Peer not found');
 		}
 
 		return generatePeerConfig(peer);
