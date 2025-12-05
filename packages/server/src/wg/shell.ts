@@ -80,6 +80,7 @@ export const isInterfaceUp = async (interfaceName: string) => {
 };
 
 export const startServer = async (server: ServerPeer) => {
+	console.log(`starting server`);
 	Bun.write('/tmp/' + server.interfaceName + '.conf', await generateServerConfig(server), { mode: 0o600 });
 	await cmd(`wg-quick up /tmp/${server.interfaceName}.conf`);
 };

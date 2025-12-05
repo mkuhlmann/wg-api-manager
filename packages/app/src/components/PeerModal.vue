@@ -1,30 +1,36 @@
 <template>
-	<Dialog v-model:visible="visible" :modal="true" :header="isEditMode ? 'Edit Peer' : 'Add Peer'" class="rounded-2xl">
-		<form @submit.prevent="handleSubmit" class="flex flex-col gap-6 p-2">
+	<BaseModal v-model:visible="visible" :header="isEditMode ? 'Edit Peer' : 'Add Peer'">
+		<form @submit.prevent="handleSubmit" class="flex flex-col gap-6">
 			<div class="field">
-				<label for="friendlyName" class="mb-1 font-semibold text-sky-500">Friendly Name</label>
-				<InputText id="friendlyName" v-model="form.friendlyName" class="w-full !rounded-lg" />
-				<small class="text-gray-400">A friendly name for the peer.</small>
+				<label for="friendlyName" class="mb-1 font-semibold text-sky-500 block">Friendly Name</label>
+				<BaseInput id="friendlyName" v-model="form.friendlyName" class="w-full" placeholder="e.g. John's iPhone" />
+				<small class="text-gray-400">A memorable name for this client device.</small>
 			</div>
 			<div class="field">
-				<label for="wgAddress" class="mb-1 font-semibold text-sky-500">WireGuard Address</label>
-				<InputText id="wgAddress" v-model="form.wgAddress" class="w-full !rounded-lg" />
-				<small class="text-gray-400">The IP address of the WireGuard peer, <strong>optional</strong>.</small>
+				<label for="wgAddress" class="mb-1 font-semibold text-sky-500 block">WireGuard Address</label>
+				<BaseInput id="wgAddress" v-model="form.wgAddress" class="w-full" placeholder="e.g. 10.8.0.5" />
+				<small class="text-gray-400">Static IP address (optional). If empty, the next available IP will be assigned.</small>
+				<span v-if="errors.wgAddress" class="text-red-500 text-sm block mt-1">{{ errors.wgAddress }}</span>
 			</div>
 			<div class="flex justify-end gap-2 mt-4">
-				<Button label="Cancel" @click="visible = false" outlined class="!rounded-lg" />
-				<Button :label="isEditMode ? 'Save Changes' : 'Add Peer'" type="submit" class="!bg-blue-600 hover:!bg-blue-700 text-white font-semibold shadow-lg rounded-lg px-4 py-2" />
+				<BaseButton label="Cancel" @click="visible = false" variant="ghost" type="button">Cancel</BaseButton>
+				<BaseButton type="submit" variant="primary">
+					{{ isEditMode ? 'Save Changes' : 'Add Peer' }}
+				</BaseButton>
 			</div>
 		</form>
-	</Dialog>
+	</BaseModal>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue';
-import { Dialog, Button, InputText, useToast } from 'primevue';
+import { useToast } from 'primevue';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import type { Peer, ServerPeer } from '@server/db/schema';
 import { eden } from '@app/queries/edenClient';
+import BaseButton from './BaseButton.vue';
+import BaseInput from './BaseInput.vue';
+import BaseModal from './BaseModal.vue';
 
 const toast = useToast();
 
@@ -35,7 +41,7 @@ const props = defineProps<{
 
 const isEditMode = ref(props.peer ? true : false);
 
-const visible = defineModel<boolean>('visible');
+const visible = defineModel<boolean>('visible', { required: true });
 const queryClient = useQueryClient();
 
 const form = reactive<{
@@ -46,6 +52,29 @@ const form = reactive<{
 	wgAddress: '',
 });
 
+const errors = reactive({
+	wgAddress: '',
+});
+
+const validate = () => {
+	let isValid = true;
+	errors.wgAddress = '';
+
+	if (form.wgAddress) {
+		// Simple IPv4 validation
+		const ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+		// Simple IPv6 validation (basic)
+		const ipv6Regex = /^(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}$/i;
+		
+		if (!ipv4Regex.test(form.wgAddress) && !ipv6Regex.test(form.wgAddress)) {
+			errors.wgAddress = 'Invalid IP address format.';
+			isValid = false;
+		}
+	}
+
+	return isValid;
+};
+
 watch(
 	() => props.peer,
 	(peer) => {
@@ -55,7 +84,10 @@ watch(
 			isEditMode.value = true;
 		} else {
 			isEditMode.value = false;
+			form.friendlyName = '';
+			form.wgAddress = '';
 		}
+		errors.wgAddress = '';
 	},
 	{ immediate: true }
 );
@@ -100,6 +132,9 @@ const updatePeer = useMutation({
 });
 
 const handleSubmit = () => {
+	if (!validate()) {
+		return;
+	}
 	const data = { ...form };
 	if (data.wgAddress === '') {
 		data.wgAddress = undefined;
@@ -114,17 +149,3 @@ const handleSubmit = () => {
 	}
 };
 </script>
-
-<style scoped>
-:deep(.p-dialog) {
-	border-radius: 1.5rem;
-}
-:deep(.p-inputtext) {
-	border-radius: 0.75rem;
-}
-:deep(.p-button) {
-	border-radius: 0.75rem;
-	font-weight: 600;
-	transition: background 0.2s, color 0.2s;
-}
-</style>

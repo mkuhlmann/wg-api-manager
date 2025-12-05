@@ -9,141 +9,211 @@
 				<span class="text-white text-lg font-semibold">Loading server...</span>
 			</div>
 		</div>
-		<div class="mb-8">
-			<h1 class="text-3xl font-light text-white drop-shadow mb-4">Server</h1>
-			<div class="inline-block w-lg" v-if="server">
-				<PeerModal v-model:visible="showAddPeerModal" :server="server" />
-				<PeerModal v-model:visible="showEditPeerModal" :peer="selectedPeer" :server="server" />
-				<Card class="!rounded-none shadow-xl !bg-gray-800">
-					<template #title>
-						<span class="text-lg font-bold text-sky-500 flex items-center gap-2">
-							<Icon class="w-5 h-5 text-sky-500"><AddIcon /></Icon>
-							{{ server.friendlyName ?? server.id }}
-						</span>
-					</template>
-					<template #content>
-						<table class="w-full text-sm text-gray-300">
-							<tbody>
-								<tr>
-									<td class="font-semibold pr-2">Id</td>
-									<td class="truncate">{{ server.id }}</td>
-								</tr>
-								<tr>
-									<td class="font-semibold pr-2">Endpoint</td>
-									<td class="truncate">{{ server.wgEndpoint }}</td>
-								</tr>
-								<tr>
-									<td class="font-semibold pr-2">Listen Port</td>
-									<td class="truncate">{{ server.wgListenPort }}</td>
-								</tr>
-								<tr>
-									<td class="font-semibold pr-2">CIDR Range</td>
-									<td class="truncate">{{ server.cidrRange }}</td>
-								</tr>
-							</tbody>
-						</table>
-					</template>
-				</Card>
+
+		<div class="flex flex-col gap-8">
+			<!-- Server Details -->
+			<div class="flex flex-col gap-4">
+				<h1 class="text-3xl font-light text-white drop-shadow">Server</h1>
+				<div class="w-full max-w-2xl" v-if="server">
+					<PeerModal v-model:visible="showAddPeerModal" :server="server" />
+					<PeerModal v-model:visible="showEditPeerModal" :peer="selectedPeer" :server="server" />
+					
+					<BaseCard :title="server.friendlyName ?? server.id">
+						<template #header>
+							<div class="flex items-center gap-2 text-sky-500">
+								<Icon class="w-5 h-5"><AddIcon /></Icon>
+								<span class="text-lg font-bold">{{ server.friendlyName ?? server.id }}</span>
+							</div>
+						</template>
+						
+						<div class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-3 text-sm text-gray-300">
+							<span class="font-semibold text-gray-500">Id</span>
+							<span class="truncate font-mono">{{ server.id }}</span>
+							
+							<span class="font-semibold text-gray-500">Endpoint</span>
+							<span class="truncate font-mono">{{ server.wgEndpoint }}</span>
+							
+							<span class="font-semibold text-gray-500">Listen Port</span>
+							<span class="truncate font-mono">{{ server.wgListenPort }}</span>
+							
+							<span class="font-semibold text-gray-500">CIDR Range</span>
+							<span class="truncate font-mono">{{ server.cidrRange }}</span>
+						</div>
+					</BaseCard>
+				</div>
 			</div>
-		</div>
-		<div class="flex gap-5 items-center my-4">
-			<h1 class="text-2xl font-light text-white">Peers</h1>
-			<Button label="Add Peer" @click="showAddPeerModal = true" class="!bg-sky-500 text-white !border-none">
-				<Icon class="w-5 h-5"><AddIcon /></Icon>
-			</Button>
-		</div>
-		<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-8">
-			<div v-for="peer in peers" :key="peer.id">
-				<Card class="!rounded-none shadow-xl !bg-gray-800 hover:scale-105 transition-transform duration-200">
-					<template #title>
-						<span class="text-lg font-bold text-blue-300 flex items-center gap-2">
+
+			<!-- Peers List -->
+			<div class="flex flex-col gap-4">
+				<div class="flex justify-between items-center">
+					<h1 class="text-2xl font-light text-white">Peers</h1>
+					<BaseButton @click="showAddPeerModal = true">
+						<template #icon-left>
+							<Icon class="w-5 h-5"><AddIcon /></Icon>
+						</template>
+						Add Peer
+					</BaseButton>
+				</div>
+
+				<DataView
+					:items="peers || []"
+					:filter-fields="['id', 'friendlyName', 'wgAddress']"
+					default-layout="grid"
+				>
+					<template #grid-item="{ item: peer }">
+						<BaseCard :title="peer.friendlyName ?? peer.id" class="h-full flex flex-col">
+							<template #header>
+								<div class="flex items-center gap-2 text-blue-300">
+									<span class="text-lg font-bold truncate">{{ peer.friendlyName ?? peer.id }}</span>
+								</div>
+							</template>
+							
+							<div class="flex-1 flex flex-col gap-4">
+								<div class="flex items-center gap-2 text-sm">
+									<span v-if="!peer.peerInfo" class="text-gray-400 flex items-center gap-1">
+										<span class="text-gray-600">⬤</span> Unknown
+									</span>
+									<span v-else-if="peer.peerInfo.connected" class="text-green-400 flex items-center gap-1">
+										<span>⬤</span> Connected
+									</span>
+									<span v-else class="text-red-400 flex items-center gap-1">
+										<span>⬤</span> Disconnected
+									</span>
+								</div>
+
+								<div class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm text-gray-300">
+									<span class="font-semibold text-gray-500">Id</span>
+									<span class="truncate font-mono">{{ peer.id }}</span>
+									
+									<span class="font-semibold text-gray-500">Address</span>
+									<span class="truncate font-mono">{{ peer.wgAddress }}</span>
+									
+									<template v-if="peer.peerInfo">
+										<span class="font-semibold text-gray-500">Last Handshake</span>
+										<span class="truncate">{{ peer.peerInfo.wgLatestHandshake == 0 ? '-' : new Date(peer.peerInfo.wgLatestHandshake * 1000).toLocaleString() }}</span>
+										
+										<span class="font-semibold text-gray-500">Received</span>
+										<span class="truncate">{{ Math.round((peer.peerInfo.wgTransferRx * 100) / 1024) / 100 }} KiB</span>
+										
+										<span class="font-semibold text-gray-500">Transmitted</span>
+										<span class="truncate">{{ Math.round((peer.peerInfo.wgTransferTx * 100) / 1024) / 100 }} KiB</span>
+									</template>
+								</div>
+							</div>
+
+							<template #footer>
+								<div class="grid grid-cols-4 gap-2">
+									<BaseButton @click="showQrCode(peer.id)" variant="secondary" class="px-0! flex justify-center" title="QR Code">
+										<Icon class="w-5 h-5"><QrCodeIcon /></Icon>
+									</BaseButton>
+									<BaseButton @click="showConfig(peer.id)" variant="secondary" class="px-0! flex justify-center" title="Config">
+										<Icon class="w-5 h-5"><CodeIcon /></Icon>
+									</BaseButton>
+									<BaseButton @click="editPeer(peer)" variant="secondary" class="px-0! flex justify-center text-yellow-500! hover:text-yellow-400!" title="Edit">
+										<Icon class="w-5 h-5"><EditIcon /></Icon>
+									</BaseButton>
+									<BaseButton @click="deletePeer(peer.id)" variant="secondary" class="px-0! flex justify-center text-red-500! hover:text-red-400!" title="Delete">
+										<Icon class="w-5 h-5"><DeleteIcon /></Icon>
+									</BaseButton>
+								</div>
+							</template>
+						</BaseCard>
+					</template>
+
+					<template #table-header>
+						<th class="px-6 py-3">Status</th>
+						<th class="px-6 py-3">Name/ID</th>
+						<th class="px-6 py-3">Address</th>
+						<th class="px-6 py-3">Transfer</th>
+						<th class="px-6 py-3 text-right">Actions</th>
+					</template>
+
+					<template #table-row="{ item: peer }">
+						<td class="px-6 py-4">
+							<span v-if="!peer.peerInfo" class="text-gray-400" title="Unknown">⬤</span>
+							<span v-else-if="peer.peerInfo.connected" class="text-green-400" title="Connected">⬤</span>
+							<span v-else class="text-red-400" title="Disconnected">⬤</span>
+						</td>
+						<td class="px-6 py-4 font-medium text-white">
 							{{ peer.friendlyName ?? peer.id }}
-						</span>
+						</td>
+						<td class="px-6 py-4 font-mono text-gray-400">
+							{{ peer.wgAddress }}
+						</td>
+						<td class="px-6 py-4 text-gray-400 text-xs">
+							<div v-if="peer.peerInfo">
+								<div>↓ {{ Math.round((peer.peerInfo.wgTransferRx * 100) / 1024) / 100 }} KiB</div>
+								<div>↑ {{ Math.round((peer.peerInfo.wgTransferTx * 100) / 1024) / 100 }} KiB</div>
+							</div>
+							<div v-else>-</div>
+						</td>
+						<td class="px-6 py-4 text-right">
+							<div class="flex justify-end gap-2">
+								<BaseButton @click="showQrCode(peer.id)" variant="ghost" size="sm" title="QR Code">
+									<Icon class="w-4 h-4"><QrCodeIcon /></Icon>
+								</BaseButton>
+								<BaseButton @click="showConfig(peer.id)" variant="ghost" size="sm" title="Config">
+									<Icon class="w-4 h-4"><CodeIcon /></Icon>
+								</BaseButton>
+								<BaseButton @click="editPeer(peer)" variant="ghost" size="sm" class="text-yellow-500!" title="Edit">
+									<Icon class="w-4 h-4"><EditIcon /></Icon>
+								</BaseButton>
+								<BaseButton @click="deletePeer(peer.id)" variant="ghost" size="sm" class="text-red-500!" title="Delete">
+									<Icon class="w-4 h-4"><DeleteIcon /></Icon>
+								</BaseButton>
+							</div>
+						</td>
 					</template>
-					<template #content>
-						<div class="mb-2">
-							<span v-if="!peer.peerInfo" class="text-gray-400 flex items-center gap-1"><span class="text-gray-600">⬤</span> Unknown</span>
-							<span v-else-if="peer.peerInfo.connected" class="text-green-400 flex items-center gap-1"><span>⬤</span> Connected</span>
-							<span v-else class="text-red-400 flex items-center gap-1"><span>⬤</span> Disconnected</span>
-						</div>
-						<table class="w-full text-sm text-gray-300">
-							<tbody>
-								<tr>
-									<td class="font-semibold pr-2">Id</td>
-									<td class="truncate">{{ peer.id }}</td>
-								</tr>
-								<tr>
-									<td class="font-semibold pr-2">Address</td>
-									<td class="truncate">{{ peer.wgAddress }}</td>
-								</tr>
-								<tr v-if="peer.peerInfo">
-									<td class="font-semibold pr-2">Last Handshake</td>
-									<td class="truncate">{{ peer.peerInfo.wgLatestHandshake == 0 ? '-' : new Date(peer.peerInfo.wgLatestHandshake * 1000).toLocaleString() }}</td>
-								</tr>
-								<tr v-if="peer.peerInfo">
-									<td class="font-semibold pr-2">Received</td>
-									<td class="truncate">{{ Math.round((peer.peerInfo.wgTransferRx * 100) / 1024) / 100 }} KiB</td>
-								</tr>
-								<tr v-if="peer.peerInfo">
-									<td class="font-semibold pr-2">Transmitted</td>
-									<td class="truncate">{{ Math.round((peer.peerInfo.wgTransferTx * 100) / 1024) / 100 }} KiB</td>
-								</tr>
-							</tbody>
-						</table>
-					</template>
-					<template #footer>
-						<div class="flex gap-4 mt-1">
-							<Button @click="showQrCode(peer.id)" class="!bg-gray-700 hover:!bg-gray-600 text-blue-300 rounded-lg shadow flex items-center justify-center">
-								<Icon class="w-5 h-5"><QrCodeIcon /></Icon>
-							</Button>
-							<Button @click="showConfig(peer.id)" class="!bg-gray-700 hover:!bg-gray-600 text-blue-300 rounded-lg shadow flex items-center justify-center">
-								<Icon class="w-5 h-5"><CodeIcon /></Icon>
-							</Button>
-							<Button @click="editPeer(peer)" class="!bg-yellow-600 hover:!bg-yellow-700 text-white rounded-lg shadow flex items-center justify-center">
-								<Icon class="w-5 h-5"><EditIcon /></Icon>
-							</Button>
-							<Button @click="deletePeer(peer.id)" class="!bg-red-600 hover:!bg-red-700 text-white rounded-lg shadow flex items-center justify-center">
-								<Icon class="w-5 h-5"><DeleteIcon /></Icon>
-							</Button>
-						</div>
-					</template>
-				</Card>
+				</DataView>
 			</div>
 		</div>
-		<Dialog header="QR Code" modal v-model:visible="modalQrCode">
-			<div class="bg-white p-2">
-				<QrcodeVue v-if="modalQrCode" :size="500" :value="wgConfig" />
+
+		<BaseModal v-model:visible="modalQrCode" header="QR Code">
+			<div class="bg-white p-2 rounded-lg flex justify-center">
+				<QrcodeVue v-if="modalQrCode" :size="300" :value="wgConfig" />
 			</div>
-		</Dialog>
-		<Dialog header="Configuration" modal v-model:visible="modalConfig">
-			<div class="bg-white dark:bg-neutral-800 p-2">
-				<pre>{{ wgConfig }}</pre>
+		</BaseModal>
+
+		<BaseModal v-model:visible="modalConfig" header="Configuration">
+			<div class="bg-gray-900 p-4 rounded-lg border border-gray-700">
+				<pre class="font-mono text-sm text-gray-300 overflow-auto max-h-[60vh] whitespace-pre-wrap break-all">{{ wgConfig }}</pre>
 			</div>
-			<div class="mt-4">
-				<Button @click="copyConfig">Copy to clipboard</Button>
-				<span class="opacity-0 ml-5 transition-opacity" v-bind:class="{ 'opacity-100': showCopiedToClipboard }">✅ Copied.</span>
-			</div>
-		</Dialog>
+			<template #footer>
+				<div class="flex items-center gap-4 w-full justify-end">
+					<span class="opacity-0 transition-opacity text-green-400 font-medium" :class="{ 'opacity-100': showCopiedToClipboard }">✅ Copied</span>
+					<BaseButton @click="copyConfig" variant="primary">
+						<template #icon-left>
+							<Icon class="w-5 h-5"><CopyIcon /></Icon>
+						</template>
+						Copy to clipboard
+					</BaseButton>
+				</div>
+			</template>
+		</BaseModal>
 	</div>
 </template>
 
 <script setup lang="ts">
-import { queryServer, queryServerPeers, queryServers } from '@app/queries/queryServers';
-import { useQueries, useQuery, useQueryClient } from '@tanstack/vue-query';
-import { Button, Card, Dialog } from 'primevue';
-import { useRoute, useRouter } from 'vue-router';
+import { queryServer, queryServerPeers } from '@app/queries/queryServers';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
+import { useRoute } from 'vue-router';
+import { ref } from 'vue';
+import { api } from '@app/queries/edenClient';
+import QrcodeVue from 'qrcode.vue';
+import PeerModal from '@app/components/PeerModal.vue';
+import type { Peer } from '@server/db/schema';
+import BaseButton from '@app/components/BaseButton.vue';
+import BaseCard from '@app/components/BaseCard.vue';
+import DataView from '@app/components/DataView.vue';
+import BaseModal from '@app/components/BaseModal.vue';
 
 import QrCodeIcon from '@vicons/carbon/QrCode';
 import CodeIcon from '@vicons/carbon/Code';
 import EditIcon from '@vicons/carbon/Edit';
 import AddIcon from '@vicons/carbon/AddAlt';
 import DeleteIcon from '@vicons/carbon/Delete';
+import CopyIcon from '@vicons/carbon/Copy';
 import { Icon } from '@vicons/utils';
-import { ref } from 'vue';
-import { api } from '@app/queries/edenClient';
-import QrcodeVue from 'qrcode.vue';
-import PeerModal from '@app/components/PeerModal.vue';
-import type { Peer } from '@server/db/schema';
 
 const route = useRoute();
 
@@ -190,6 +260,8 @@ const editPeer = (peer: Peer) => {
 };
 
 const deletePeer = async (peerId: string) => {
+	if (!confirm('Are you sure you want to delete this peer?')) return;
+	
 	await api.wg
 		.servers({ id: route.params.id as string })
 		.peers({ peerId: peerId })

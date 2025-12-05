@@ -9,44 +9,71 @@
 				<span class="text-white text-lg font-semibold">Loading servers...</span>
 			</div>
 		</div>
-		<div class="flex gap-5 items-center mb-8">
-			<h1 class="text-3xl font-thin tracking-tight text-white drop-shadow">Servers</h1>
-			<Button label="Add Server" @click="showAddModal = true" class="!bg-blue-600 hover:!bg-blue-700 text-white font-semibold shadow-lg rounded-lg px-4 py-2 flex items-center gap-2">
-				<Icon class="w-5 h-5"><AddIcon /></Icon>
-			</Button>
-		</div>
-		<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-8">
-			<div v-for="server in servers" :key="server.id" class="">
-				<Card class="!rounded-none shadow-xl !bg-gray-800 hover:scale-105 transition-transform duration-200">
-					<template #title>
-						<span class="text-lg font-thin text-sky-500 flex items-center gap-2">
-							{{ server.friendlyName ?? server.id }}
-						</span>
+
+		<div class="flex flex-col gap-8">
+			<div class="flex justify-between items-center">
+				<h1 class="text-3xl font-thin tracking-tight text-white drop-shadow">Servers</h1>
+				<BaseButton @click="showAddModal = true">
+					<template #icon-left>
+						<Icon class="w-5 h-5"><AddIcon /></Icon>
 					</template>
-					<template #content>
-						<table class="w-full text-sm text-gray-300">
-							<tbody>
-								<tr>
-									<td class="font-semibold pr-2">Id</td>
-									<td class="truncate">{{ server.id }}</td>
-								</tr>
-								<tr>
-									<td class="font-semibold pr-2">Endpoint</td>
-									<td class="truncate">{{ server.wgEndpoint }}</td>
-								</tr>
-							</tbody>
-						</table>
-					</template>
-					<template #footer>
-						<div class="flex gap-3 mt-4">
-							<Button as="router-link" :to="'/servers/' + server.id" label="View" class="w-full rounded-lg shadow" />
-							<Button @click="editServer(server)" class="rounded-lg shadow flex items-center justify-center">
-								<Icon class="w-5 h-5"><EditIcon /></Icon>
-							</Button>
-						</div>
-					</template>
-				</Card>
+					Add Server
+				</BaseButton>
 			</div>
+
+			<DataView :items="servers || []" :filter-fields="['id', 'friendlyName', 'wgEndpoint']" default-layout="grid">
+				<template #grid-item="{ item: server }">
+					<BaseCard :title="server.friendlyName ?? server.id" class="h-full flex flex-col">
+						<template #header>
+							<div class="flex items-center gap-2 text-sky-500">
+								<span class="text-lg font-thin truncate">{{ server.friendlyName ?? server.id }}</span>
+							</div>
+						</template>
+
+						<div class="flex-1">
+							<div class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm text-gray-300">
+								<span class="font-semibold text-gray-500">ID</span>
+								<span class="truncate font-mono">{{ server.id }}</span>
+
+								<span class="font-semibold text-gray-500">Endpoint</span>
+								<span class="truncate font-mono">{{ server.wgEndpoint }}</span>
+							</div>
+						</div>
+
+						<template #footer>
+							<div class="flex gap-3">
+								<BaseButton as="router-link" :to="'/servers/' + server.id" variant="secondary" class="flex-1"> View </BaseButton>
+								<BaseButton @click="editServer(server)" variant="ghost" class="px-3!">
+									<Icon class="w-5 h-5"><EditIcon /></Icon>
+								</BaseButton>
+							</div>
+						</template>
+					</BaseCard>
+				</template>
+
+				<template #table-header>
+					<th class="px-6 py-3">Name/ID</th>
+					<th class="px-6 py-3">Endpoint</th>
+					<th class="px-6 py-3 text-right">Actions</th>
+				</template>
+
+				<template #table-row="{ item: server }">
+					<td class="px-6 py-4 font-medium text-white">
+						{{ server.friendlyName ?? server.id }}
+					</td>
+					<td class="px-6 py-4 font-mono text-gray-400">
+						{{ server.wgEndpoint }}
+					</td>
+					<td class="px-6 py-4 text-right">
+						<div class="flex justify-end gap-2">
+							<BaseButton as="router-link" :to="'/servers/' + server.id" variant="secondary" size="sm"> View </BaseButton>
+							<BaseButton @click="editServer(server)" variant="ghost" size="sm">
+								<Icon class="w-4 h-4"><EditIcon /></Icon>
+							</BaseButton>
+						</div>
+					</td>
+				</template>
+			</DataView>
 		</div>
 	</div>
 
@@ -58,9 +85,11 @@
 import { ref } from 'vue';
 import { queryServers } from '@app/queries/queryServers';
 import { useQuery } from '@tanstack/vue-query';
-import { Button, Card } from 'primevue';
 import ServerModal from '@app/components/ServerModal.vue';
 import type { ServerPeer } from '@server/db/schema';
+import BaseButton from '@app/components/BaseButton.vue';
+import BaseCard from '@app/components/BaseCard.vue';
+import DataView from '@app/components/DataView.vue';
 
 import { Icon } from '@vicons/utils';
 import AddIcon from '@vicons/carbon/AddAlt';
@@ -76,21 +105,3 @@ const editServer = (server: ServerPeer) => {
 	showEditModal.value = true;
 };
 </script>
-
-<style scoped>
-.table-definition td {
-	padding: 0.5rem;
-}
-
-/* Modern card and button styles */
-:deep(.p-card) {
-	background: transparent;
-	border: none;
-	box-shadow: none;
-}
-:deep(.p-button) {
-	border-radius: 0.75rem;
-	font-weight: 600;
-	transition: background 0.2s, color 0.2s;
-}
-</style>
