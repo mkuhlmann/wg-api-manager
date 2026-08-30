@@ -1,95 +1,57 @@
 import { $ } from 'bun';
-import type { ServerPeer } from '../db/schema';
 import { createLog } from '@server/lib/log';
-
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import { generateServerConfig } from './config';
+import * as real from './shell.real';
+import * as shim from './shell.shim';
 
 const log = createLog('wg');
 
-const execAsync = promisify(exec);
+const override = (process.env.WG_DEV_SHIM ?? '').toLowerCase();
+const forceShim = override === 'true' || override === '1';
+const forceReal = override === 'false' || override === '0';
 
-export const cmd = async (command: string) => {
-	try {
-		log.info(`⚙️  ${command}`);
-		let shell = '';
-		try {
-			await execAsync('command -v bash');
-			shell = 'bash';
-		} catch {
-			try {
-				await execAsync('command -v ash');
-				shell = 'ash';
-			} catch {
-				throw new Error('Neither bash nor ash shell is available.');
-			}
-		}
-		const { stdout, stderr } = await execAsync(command, { shell });
-		return { stdout: stdout.trim(), stderr: stderr.trim() };
-	} catch (error) {
-		log.error(error);
-		throw error;
+const detectCapabilities = async () => {
+	if (forceShim) return { crypto: false, network: false };
+	if (forceReal) return { crypto: true, network: true };
+
+	const hasCrypto = !!Bun.which('wg');
+	let hasNetwork = hasCrypto && !!Bun.which('wg-quick') && !!Bun.which('ip');
+
+	if (hasNetwork) {
+		// wg genkey/pubkey/psk need no privileges, but managing interfaces needs
+		// NET_ADMIN. Probe that specifically, since the binaries can be present
+		// without the permission (e.g. an unprivileged dev container).
+		const probe = `wgshimprobe${process.pid}`;
+		const add = await $`ip link add dev ${probe} type dummy`.quiet().nothrow();
+		hasNetwork = add.exitCode === 0;
+		await $`ip link delete dev ${probe}`.quiet().nothrow();
 	}
+
+	return { crypto: hasCrypto, network: hasNetwork };
 };
 
-export const wgGenKey = async () => {
-	return (await $`wg genkey`.text()).trim();
-};
+const capabilities = await detectCapabilities();
 
-export const wgGenPsk = async () => {
-	return (await $`wg genpsk`.text()).trim();
-};
-
-export const wgDerivePublicKey = async (privateKey: string) => {
-	return (await $`wg pubkey < ${new Response(privateKey)}`.text()).trim();
-};
-
-export const wgShow = async (interfaceName: string) => {
-	try {
-		const output = (await $`wg show ${interfaceName} dump`.text()) ?? '';
-		const lines = output.trim().split('\n');
-		if (!lines.length) return null;
-		const [privateKey, publicKey, listenPort, fwmark] = lines[0].split('\t');
-		const peers = lines.slice(1).map((line) => {
-			const [publicKey, presharedKey, endpoint, allowedIps, latestHandshake, transferRx, transferTx, persistentKeepalive] = line.split('\t');
-			return {
-				publicKey,
-				presharedKey,
-				endpoint,
-				allowedIps,
-				latestHandshake: parseInt(latestHandshake, 10),
-				transferRx: parseInt(transferRx, 10),
-				transferTx: parseInt(transferTx, 10),
-				persistentKeepalive,
-			};
-		});
-		return {
-			interface: { privateKey, publicKey, listenPort, fwmark },
-			peers,
-		};
-	} catch (error) {
-		log.error(error);
-		return null;
+if (!capabilities.crypto || !capabilities.network) {
+	if (process.env.NODE_ENV === 'production' && !forceShim) {
+		throw new Error(
+			'wg/wg-quick/ip are missing or lack permission to manage network interfaces (NET_ADMIN capability required). ' +
+				'Refusing to silently fall back to the development shim in production. Set WG_DEV_SHIM=true to override.'
+		);
 	}
-};
+	log.warn(
+		`⚠️  WireGuard/network tooling unavailable (crypto: ${capabilities.crypto ? 'real' : 'shimmed'}, interfaces: ${capabilities.network ? 'real' : 'shimmed'}). ` +
+			'Running with the development shim — no real tunnels or network changes will be made.'
+	);
+}
 
-export const isInterfaceUp = async (interfaceName: string) => {
-	const output = (await $`ip a`.text()) ?? '';
-	return output.includes(interfaceName);
-};
+export const wgGenKey = capabilities.crypto ? real.wgGenKey : shim.wgGenKey;
+export const wgGenPsk = capabilities.crypto ? real.wgGenPsk : shim.wgGenPsk;
+export const wgDerivePublicKey = capabilities.crypto ? real.wgDerivePublicKey : shim.wgDerivePublicKey;
 
-export const startServer = async (server: ServerPeer) => {
-	console.log(`starting server`);
-	Bun.write('/tmp/' + server.interfaceName + '.conf', await generateServerConfig(server), { mode: 0o600 });
-	await cmd(`wg-quick up /tmp/${server.interfaceName}.conf`);
-};
+export const wgShow = capabilities.network ? real.wgShow : shim.wgShow;
+export const isInterfaceUp = capabilities.network ? real.isInterfaceUp : shim.isInterfaceUp;
+export const startServer = capabilities.network ? real.startServer : shim.startServer;
+export const reloadServer = capabilities.network ? real.reloadServer : shim.reloadServer;
+export const stopServer = capabilities.network ? real.stopServer : shim.stopServer;
 
-export const reloadServer = async (server: ServerPeer) => {
-	Bun.write('/tmp/' + server.interfaceName + '.conf', await generateServerConfig(server), { mode: 0o600 });
-	await cmd(`wg syncconf ${server.interfaceName} <(wg-quick strip /tmp/${server.interfaceName}.conf)`);
-};
-
-export const stopServer = async (server: ServerPeer) => {
-	await cmd(`ip link delete dev ${server.interfaceName}`);
-};
+export const cmd = real.cmd;
