@@ -178,6 +178,22 @@ describe('groupsRouter', () => {
 			expect(response.status).toBe(400);
 		});
 
+		it('PUT should reject an ipv6 dstCidr (the firewall this feeds is ipv4-only)', async () => {
+			// regression: this used to pass validation (ip-cidr's isValidCIDR accepts
+			// ipv6) and then break every future firewall sync, since `ip daddr` in the
+			// generated nft ruleset is ipv4-specific.
+			const office = await db.query.peerGroupsTable.findFirst({ where: (t, { eq, and }) => and(eq(t.serverPeerId, 'groupsRouter-server'), eq(t.name, 'office')) });
+
+			const response = await app.handle(
+				new Request(`http://localhost/wg/servers/groupsRouter-server/groups/${office!.id}/rules`, {
+					method: 'PUT',
+					headers: { ...auth, 'content-type': 'application/json' },
+					body: JSON.stringify({ dstGroupIds: [], dstCidrs: ['fd00::/64'] }),
+				})
+			);
+			expect(response.status).toBe(400);
+		});
+
 		it('PUT should replace the rule set atomically (delete-then-insert)', async () => {
 			const office = await db.query.peerGroupsTable.findFirst({ where: (t, { eq, and }) => and(eq(t.serverPeerId, 'groupsRouter-server'), eq(t.name, 'office')) });
 

@@ -103,6 +103,17 @@ describe('buildRuleset', () => {
 		expect(ruleset).toContain('ip daddr 192.168.50.0/24 accept');
 	});
 
+	it('drops an ipv6 dstCidr rather than emitting an invalid `ip daddr <ipv6>` line', () => {
+		// regression: `ip daddr` is the ipv4-specific match - handing it an ipv6
+		// literal is an nft type error (`nft -f` exits 1), not something nft
+		// tolerates. A stray ipv6 rule must not be able to break every future sync.
+		const office = group({ id: 'g-office', name: 'office', memberIps: ['10.20.20.2'], dstCidrs: ['fd00::/64', '192.168.50.0/24'] });
+		const ruleset = buildRuleset([server({ groups: [office] })]);
+
+		expect(ruleset).not.toContain('fd00::');
+		expect(ruleset).toContain('ip daddr 192.168.50.0/24 accept');
+	});
+
 	it('routes grouped traffic to the input chain only when allowServer is set', () => {
 		const withAccess = group({ id: 'g-office', name: 'office', memberIps: ['10.20.20.2'], allowServer: true });
 		const ruleset = buildRuleset([server({ groups: [withAccess] })]);

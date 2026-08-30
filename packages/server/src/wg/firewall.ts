@@ -30,6 +30,14 @@ export type FirewallServer = {
 // instead - the human name still appears as an nft `comment` for readability.
 const sanitizeComment = (value: string) => value.replace(/[\\"\r\n]/g, '').slice(0, 64);
 
+// This feature is ipv4-only throughout (see the `meta nfproto ipv6 drop` above).
+// `ip daddr <cidr>` is the ipv4-specific match - handing it an ipv6 literal is an
+// nft type error (`nft -f` exits 1: "Address family for hostname not supported"),
+// not something nft just ignores. Used both to gate the api (`groups.ts`) and,
+// defensively, here - a dstCidr already in the db (e.g. from before this check
+// existed) must not be able to permanently break every future sync.
+export const isIpv4Cidr = (value: string) => /^(?:\d{1,3}\.){3}\d{1,3}\/(?:[0-9]|[1-2][0-9]|3[0-2])$/.test(value);
+
 const quote = (value: string) => `"${value}"`;
 
 /**
@@ -96,6 +104,7 @@ export const buildRuleset = (servers: FirewallServer[]): string => {
 			}
 
 			for (const cidr of group.dstCidrs) {
+				if (!isIpv4Cidr(cidr)) continue; // defensive - see isIpv4Cidr comment above
 				srcBody.push(`\tip daddr ${cidr} accept`);
 			}
 
@@ -195,6 +204,13 @@ const loadFirewallState = async (): Promise<FirewallServer[]> => {
 			const members = await db.query.peersTable.findMany({ where: eq(peersTable.groupId, group.id) });
 			const rules = await db.query.peerGroupRulesTable.findMany({ where: eq(peerGroupRulesTable.srcGroupId, group.id) });
 
+			const dstCidrs = rules.filter((r) => r.dstCidr).map((r) => r.dstCidr!);
+			for (const cidr of dstCidrs) {
+				if (!isIpv4Cidr(cidr)) {
+					log.warn(`Group ${group.id} (${group.name}) has a non-ipv4 dstCidr rule "${cidr}" - ignoring it. Remove and re-add the rule via the api/ui to clean it up.`);
+				}
+			}
+
 			firewallGroups.push({
 				id: group.id,
 				name: group.friendlyName ?? group.name,
@@ -202,7 +218,7 @@ const loadFirewallState = async (): Promise<FirewallServer[]> => {
 				allowInternet: group.allowInternet,
 				memberIps: members.map((m) => m.wgAddress),
 				dstGroupIds: rules.filter((r) => r.dstGroupId).map((r) => r.dstGroupId!),
-				dstCidrs: rules.filter((r) => r.dstCidr).map((r) => r.dstCidr!),
+				dstCidrs,
 			});
 		}
 

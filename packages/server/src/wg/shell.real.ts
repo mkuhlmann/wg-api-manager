@@ -107,7 +107,15 @@ export const stopServer = async (server: ServerPeer) => {
 export const applyFirewall = async (ruleset: string) => {
 	// feed the generated script on stdin rather than a temp file - no path to
 	// inject, and no interpolation of the ruleset into a shell command at all.
-	await $`nft -f - < ${new Response(ruleset)}`.quiet();
+	try {
+		await $`nft -f - < ${new Response(ruleset)}`.quiet();
+	} catch (error) {
+		// Bun's ShellError.message is just "Failed with exit code N" - the actual
+		// reason (nft prints the offending line + a caret) is on .stderr, and gets
+		// silently dropped if not read here.
+		const stderr = error instanceof Error && 'stderr' in error ? String((error as any).stderr) : '';
+		throw new Error(`nft -f failed: ${stderr.trim() || error}`);
+	}
 };
 
 export const resetFirewall = async () => {

@@ -1,9 +1,8 @@
 import { Elysia, status, t } from 'elysia';
 import { db } from '../db';
 import { peerGroupRulesTable, peerGroupsTable, peersTable, serverPeersTable } from '../db/schema';
-import IPCIDR from 'ip-cidr';
 import { eq, and, or, ne } from 'drizzle-orm';
-import { syncFirewall } from '../wg/firewall';
+import { isIpv4Cidr, syncFirewall } from '../wg/firewall';
 import { auth } from './auth';
 import { createLog } from '@server/lib/log';
 
@@ -197,8 +196,10 @@ export const groupsRoutes = new Elysia()
 			}
 
 			for (const dstCidr of body.dstCidrs) {
-				if (!IPCIDR.isValidCIDR(dstCidr)) {
-					return status(400, `Invalid CIDR: ${dstCidr}`);
+				// ipv4-only - the firewall this feeds (wg/firewall.ts) is ipv4-only
+				// throughout (`ip daddr`, no peer has a v6 address)
+				if (!isIpv4Cidr(dstCidr)) {
+					return status(400, `Invalid or non-ipv4 CIDR: ${dstCidr}`);
 				}
 			}
 
