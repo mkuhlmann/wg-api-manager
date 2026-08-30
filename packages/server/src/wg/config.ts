@@ -1,5 +1,5 @@
 import { db } from '@server/db';
-import { Peer, peersTable, ServerPeer, serverPeersTable } from '@server/db/schema';
+import { peersTable, serverPeersTable, type Peer, type ServerPeer } from '@server/db/schema';
 import { eq } from 'drizzle-orm';
 
 export const generateServerConfig = async (server: ServerPeer) => {

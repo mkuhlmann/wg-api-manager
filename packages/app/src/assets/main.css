@@ -1,12 +1,84 @@
 @import 'tailwindcss';
 
+/*
+ * "Signal" design system — operator terminal / CRT console.
+ * See DESIGN.md at the repo root for the full rationale and usage guide.
+ */
 @theme {
-	--default-font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
-		'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif,
-		'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-		'Noto Color Emoji';
+	--font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', Menlo, monospace;
+	--default-font-family: var(--font-mono);
+
+	--color-bg: #0a0d0a;
+	--color-surface: #10140f;
+	--color-surface2: #161c12;
+	--color-border: #28351f;
+	--color-text: #d7f2c9;
+	--color-muted: #6f8f63;
+	--color-accent: #43f18a;
+	--color-accent-dim: #245c3f;
+	--color-up: #43f18a;
+	--color-down: #ff6b5e;
+	--color-unknown: #d9a441;
 }
 
 body {
-	@apply dark:bg-black;
+	background: var(--color-bg);
+	color: var(--color-text);
+}
+
+::selection {
+	background: var(--color-accent-dim);
+	color: var(--color-text);
+}
+
+/* subtle CRT scanline texture, applied once at the app root */
+.crt-scanlines {
+	position: relative;
+}
+.crt-scanlines::before {
+	content: '';
+	position: fixed;
+	inset: 0;
+	pointer-events: none;
+	z-index: 40;
+	opacity: 0.05;
+	background: repeating-linear-gradient(0deg, #000 0px, #000 1px, transparent 1px, transparent 3px);
+}
+
+@keyframes blink {
+	0%,
+	49% {
+		opacity: 1;
+	}
+	50%,
+	100% {
+		opacity: 0;
+	}
+}
+.caret {
+	display: inline-block;
+	width: 0.55em;
+	height: 1.1em;
+	background: var(--color-accent);
+	vertical-align: -2px;
+	animation: blink 1.1s steps(1) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+	.caret {
+		animation: none;
+		opacity: 1;
+	}
+}
+
+/* box-drawing section rule, repeats to fill its container */
+.rule-line {
+	color: var(--color-border);
+	font-size: 0.75rem;
+	line-height: 1;
+	overflow: hidden;
+	white-space: nowrap;
+	letter-spacing: -1px;
+}
+.rule-line::before {
+	content: '──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────';
 }

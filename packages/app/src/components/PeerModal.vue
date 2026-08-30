@@ -1,21 +1,21 @@
 <template>
-	<BaseModal v-model:visible="visible" :header="isEditMode ? 'Edit Peer' : 'Add Peer'">
-		<form @submit.prevent="handleSubmit" class="flex flex-col gap-6">
+	<BaseModal v-model:visible="visible" :header="isEditMode ? 'edit peer' : 'add peer'">
+		<form @submit.prevent="handleSubmit" class="flex flex-col gap-5">
 			<div class="field">
-				<label for="friendlyName" class="mb-1 font-semibold text-sky-500 block">Friendly Name</label>
-				<BaseInput id="friendlyName" v-model="form.friendlyName" class="w-full" placeholder="e.g. John's iPhone" />
-				<small class="text-gray-400">A memorable name for this client device.</small>
+				<label for="friendlyName" class="mb-1.5 text-sm text-muted block"><span class="text-accent-dim">&gt;</span> friendly name</label>
+				<BaseInput id="friendlyName" v-model="form.friendlyName" class="w-full" placeholder="e.g. sales-ipad-07" />
+				<small class="text-muted text-xs">a memorable name for this client device</small>
 			</div>
 			<div class="field">
-				<label for="wgAddress" class="mb-1 font-semibold text-sky-500 block">WireGuard Address</label>
-				<BaseInput id="wgAddress" v-model="form.wgAddress" class="w-full" placeholder="e.g. 10.8.0.5" />
-				<small class="text-gray-400">Static IP address (optional). If empty, the next available IP will be assigned.</small>
-				<span v-if="errors.wgAddress" class="text-red-500 text-sm block mt-1">{{ errors.wgAddress }}</span>
+				<label for="wgAddress" class="mb-1.5 text-sm text-muted block"><span class="text-accent-dim">&gt;</span> wireguard address</label>
+				<BaseInput id="wgAddress" v-model="form.wgAddress" class="w-full" placeholder="leave empty to auto-assign" />
+				<small class="text-muted text-xs">static ip address (optional). next free address is used if left blank</small>
+				<span v-if="errors.wgAddress" class="text-down text-xs block mt-1">{{ errors.wgAddress }}</span>
 			</div>
-			<div class="flex justify-end gap-2 mt-4">
-				<BaseButton label="Cancel" @click="visible = false" variant="ghost" type="button">Cancel</BaseButton>
+			<div class="flex justify-end gap-2 mt-2">
+				<BaseButton @click="visible = false" variant="ghost" type="button">cancel</BaseButton>
 				<BaseButton type="submit" variant="primary">
-					{{ isEditMode ? 'Save Changes' : 'Add Peer' }}
+					{{ isEditMode ? 'save changes' : 'add peer' }}
 				</BaseButton>
 			</div>
 		</form>
@@ -24,7 +24,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue';
-import { useToast } from 'primevue';
+import { useToast } from '@app/composables/useToast';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import type { Peer, ServerPeer } from '@server/db/schema';
 import { eden } from '@app/queries/edenClient';

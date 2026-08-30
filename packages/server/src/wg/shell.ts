@@ -1,5 +1,5 @@
 import { $ } from 'bun';
-import { ServerPeer } from '../db/schema';
+import type { ServerPeer } from '../db/schema';
 import { createLog } from '@server/lib/log';
 
 import { exec } from 'child_process';

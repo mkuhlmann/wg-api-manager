@@ -1,49 +1,49 @@
 <template>
-	<BaseModal v-model:visible="visible" :header="isEditMode ? 'Edit Server' : 'Add Server'">
-		<form @submit.prevent="handleSubmit" class="flex flex-col gap-6">
+	<BaseModal v-model:visible="visible" :header="isEditMode ? 'edit server' : 'add server'">
+		<form @submit.prevent="handleSubmit" class="flex flex-col gap-5">
 			<div class="field">
-				<label for="friendlyName" class="mb-1 font-semibold text-sky-500 block">Friendly Name</label>
-				<BaseInput id="friendlyName" v-model="form.friendlyName" class="w-full" placeholder="e.g. Primary VPN" />
-				<small class="text-gray-400">A memorable name for this server.</small>
+				<label for="friendlyName" class="mb-1.5 text-sm text-muted block"><span class="text-accent-dim">&gt;</span> friendly name</label>
+				<BaseInput id="friendlyName" v-model="form.friendlyName" class="w-full" placeholder="e.g. fra-edge-01" />
+				<small class="text-muted text-xs">a memorable name for this server</small>
 			</div>
 			<div class="field">
-				<label for="interfaceName" class="mb-1 font-semibold text-sky-500 block">Interface Name</label>
+				<label for="interfaceName" class="mb-1.5 text-sm text-muted block"><span class="text-accent-dim">&gt;</span> interface name</label>
 				<BaseInput id="interfaceName" v-model="form.interfaceName" class="w-full" required placeholder="e.g. wg0" />
-				<small class="text-gray-400">The network interface name. Must be alphanumeric (max 15 chars).</small>
-				<span v-if="errors.interfaceName" class="text-red-500 text-sm block mt-1">{{ errors.interfaceName }}</span>
+				<small class="text-muted text-xs">the network interface name. must be alphanumeric (max 15 chars)</small>
+				<span v-if="errors.interfaceName" class="text-down text-xs block mt-1">{{ errors.interfaceName }}</span>
 			</div>
 			<div class="field">
-				<label for="wgAddress" class="mb-1 font-semibold text-sky-500 block">WireGuard Address</label>
+				<label for="wgAddress" class="mb-1.5 text-sm text-muted block"><span class="text-accent-dim">&gt;</span> wireguard address</label>
 				<BaseInput id="wgAddress" v-model="form.wgAddress" class="w-full" required placeholder="e.g. 10.8.0.1" />
-				<small class="text-gray-400">The internal IP address for the WireGuard interface.</small>
-				<span v-if="errors.wgAddress" class="text-red-500 text-sm block mt-1">{{ errors.wgAddress }}</span>
+				<small class="text-muted text-xs">the internal ip address for the wireguard interface</small>
+				<span v-if="errors.wgAddress" class="text-down text-xs block mt-1">{{ errors.wgAddress }}</span>
 			</div>
 			<div class="field">
-				<label for="wgEndpoint" class="mb-1 font-semibold text-sky-500 block">WireGuard Endpoint</label>
+				<label for="wgEndpoint" class="mb-1.5 text-sm text-muted block"><span class="text-accent-dim">&gt;</span> wireguard endpoint</label>
 				<BaseInput id="wgEndpoint" v-model="form.wgEndpoint" class="w-full" required placeholder="e.g. vpn.example.com:51820" />
-				<small class="text-gray-400">The public IP or domain and port where this server is reachable.</small>
+				<small class="text-muted text-xs">the public ip or domain and port where this server is reachable</small>
 			</div>
 			<div class="field">
-				<label for="wgListenPort" class="mb-1 font-semibold text-sky-500 block">Listen Port</label>
+				<label for="wgListenPort" class="mb-1.5 text-sm text-muted block"><span class="text-accent-dim">&gt;</span> listen port</label>
 				<BaseInput id="wgListenPort" v-model.number="form.wgListenPort" type="number" class="w-full" required placeholder="51820" />
-				<small class="text-gray-400">The UDP port WireGuard will listen on (1-65535).</small>
-				<span v-if="errors.wgListenPort" class="text-red-500 text-sm block mt-1">{{ errors.wgListenPort }}</span>
+				<small class="text-muted text-xs">the udp port wireguard will listen on (1-65535)</small>
+				<span v-if="errors.wgListenPort" class="text-down text-xs block mt-1">{{ errors.wgListenPort }}</span>
 			</div>
 			<div class="field">
-				<label for="cidrRange" class="mb-1 font-semibold text-sky-500 block">CIDR Range</label>
+				<label for="cidrRange" class="mb-1.5 text-sm text-muted block"><span class="text-accent-dim">&gt;</span> cidr range</label>
 				<BaseInput id="cidrRange" v-model="form.cidrRange" class="w-full" required placeholder="e.g. 10.8.0.0/24" />
-				<small class="text-gray-400">The subnet for the VPN network. Clients get IPs from this range.</small>
-				<span v-if="errors.cidrRange" class="text-red-500 text-sm block mt-1">{{ errors.cidrRange }}</span>
+				<small class="text-muted text-xs">the subnet for the vpn network. clients get ips from this range</small>
+				<span v-if="errors.cidrRange" class="text-down text-xs block mt-1">{{ errors.cidrRange }}</span>
 			</div>
 			<div class="field">
-				<label for="reservedIps" class="mb-1 font-semibold text-sky-500 block">Reserved IPs</label>
+				<label for="reservedIps" class="mb-1.5 text-sm text-muted block"><span class="text-accent-dim">&gt;</span> reserved ips</label>
 				<BaseInput id="reservedIps" v-model.number="form.reservedIps" type="number" class="w-full" required placeholder="50" />
-				<small class="text-gray-400">Number of IPs to reserve at the start of the subnet range.</small>
+				<small class="text-muted text-xs">number of ips to reserve at the start of the subnet range</small>
 			</div>
-			<div class="flex justify-end gap-2 mt-4">
-				<BaseButton label="Cancel" @click="visible = false" variant="ghost" type="button">Cancel</BaseButton>
+			<div class="flex justify-end gap-2 mt-2">
+				<BaseButton @click="visible = false" variant="ghost" type="button">cancel</BaseButton>
 				<BaseButton type="submit" variant="primary">
-					{{ isEditMode ? 'Save Changes' : 'Add Server' }}
+					{{ isEditMode ? 'save changes' : 'add server' }}
 				</BaseButton>
 			</div>
 		</form>
@@ -51,8 +51,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch } from 'vue';
-import { useToast } from 'primevue';
+import { ref, reactive, watch } from 'vue';
+import { useToast } from '@app/composables/useToast';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import type { ServerPeer } from '@server/db/schema';
 import { eden } from '@app/queries/edenClient';

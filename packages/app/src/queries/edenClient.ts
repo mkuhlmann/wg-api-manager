@@ -11,7 +11,7 @@ export const eden = treaty<App>(`${location.host}`, {
 			};
 		}
 	},
-	fetcher: async (url, options) => {
+	fetcher: (async (url, options) => {
 		const response = await fetch(url, options);
 		if (response.status >= 400) {
 			const clone = response.clone();
@@ -29,7 +29,7 @@ export const eden = treaty<App>(`${location.host}`, {
 			}
 		}
 		return response;
-	},
+	}) as typeof fetch,
 });
 
 export const api = eden.api.v1;

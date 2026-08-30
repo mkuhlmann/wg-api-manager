@@ -1,5 +1,5 @@
 import { db } from '@server/db';
-import { peersTable, ServerPeer } from '@server/db/schema';
+import { peersTable, type ServerPeer } from '@server/db/schema';
 import { isInterfaceUp, startServer, stopServer, wgShow } from './shell';
 import { createLog } from '@server/lib/log';
 import { eq } from 'drizzle-orm';

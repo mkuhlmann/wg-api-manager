@@ -1,6 +1,6 @@
 import { Elysia, t } from 'elysia';
 import { db } from '../db';
-import { Peer, peersTable, serverPeersTable } from '../db/schema';
+import { peersTable, serverPeersTable, type Peer } from '../db/schema';
 import IPCIDR from 'ip-cidr';
 import { eq, and, or } from 'drizzle-orm';
 import { reloadServer, wgDerivePublicKey, wgGenKey, wgGenPsk } from '../wg/shell';
