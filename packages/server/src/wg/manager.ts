@@ -1,6 +1,7 @@
 import { db } from '@server/db';
 import { peersTable, type ServerPeer } from '@server/db/schema';
-import { isInterfaceUp, startServer, stopServer, wgShow } from './shell';
+import { isInterfaceUp, resetFirewall, startServer, stopServer, wgShow } from './shell';
+import { syncFirewall } from './firewall';
 import { createLog } from '@server/lib/log';
 import { eq } from 'drizzle-orm';
 
@@ -22,6 +23,8 @@ const constructWgManager = () => {
 			log.info(`Starting server ${server.interfaceName}`);
 			await startServer(server);
 		}
+
+		await syncFirewall();
 
 		loop();
 	};
@@ -71,6 +74,8 @@ const constructWgManager = () => {
 				await stopServer(server);
 			}
 		}
+
+		await resetFirewall();
 	};
 
 	return { start, stop, peerInfo };

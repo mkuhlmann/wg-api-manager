@@ -1,5 +1,5 @@
 import { db } from '@server/db';
-import { peersTable, serverPeersTable, type Peer, type ServerPeer } from '@server/db/schema';
+import { peerGroupRulesTable, peerGroupsTable, peersTable, serverPeersTable, type Peer, type ServerPeer } from '@server/db/schema';
 import { eq } from 'drizzle-orm';
 
 export const generateServerConfig = async (server: ServerPeer) => {
@@ -18,11 +18,36 @@ ListenPort = ${server.wgListenPort}
 [Peer]
 PublicKey = ${peer.wgPublicKey}
 AllowedIPs = ${peer.wgAddress}
-PreSharedKey = ${peer.wgPresharedKey}
 `;
+		if (peer.wgPresharedKey) {
+			config += `PreSharedKey = ${peer.wgPresharedKey}\n`;
+		}
 	}
 
 	return config;
+};
+
+/**
+ * Client-side AllowedIPs is a routing hint, not the enforcement boundary - the
+ * server's nft ruleset (see wg/firewall.ts) is what actually decides reachability.
+ * A client can't reach an allowed subnet or the internet unless its own config
+ * routes that traffic into the tunnel in the first place, so this still has to
+ * reflect the peer's group grant. Peers reachable via a dstGroupId rule need no
+ * extra entry here - they're other peers on the same server.cidrRange, already
+ * covered by the base entry.
+ */
+const computeClientAllowedIps = async (peer: Peer, server: ServerPeer) => {
+	if (!peer.groupId) return server.cidrRange;
+
+	const group = await db.query.peerGroupsTable.findFirst({ where: eq(peerGroupsTable.id, peer.groupId) });
+	if (!group) return server.cidrRange; // stale reference (shouldn't happen - fk sets peer.groupId null on group delete)
+
+	if (group.allowInternet) return '0.0.0.0/0';
+
+	const rules = await db.query.peerGroupRulesTable.findMany({ where: eq(peerGroupRulesTable.srcGroupId, group.id) });
+	const extraCidrs = rules.filter((r) => r.dstCidr).map((r) => r.dstCidr!);
+
+	return [server.cidrRange, ...extraCidrs].join(', ');
 };
 
 export const generatePeerConfig = async (peer: Peer) => {
@@ -34,15 +59,23 @@ export const generatePeerConfig = async (peer: Peer) => {
 		throw new Error('Server not found.');
 	}
 
-	return `[Interface]
+	const allowedIps = await computeClientAllowedIps(peer, server);
+
+	let config = `[Interface]
 PrivateKey = ${peer.wgPrivateKey}
-Address = ${peer.wgAddress.includes('/') ? peer.wgAddress : peer.wgAddress + '/24'}
+Address = ${peer.wgAddress.includes('/') ? peer.wgAddress : peer.wgAddress + '/32'}
 
 [Peer]
 PublicKey = ${server.wgPublicKey}
-EndPoint = ${server.wgEndpoint}
-AllowedIPs = ${server.cidrRange}
-PreSharedKey = ${peer.wgPresharedKey}
-PersistentKeepalive = 25
+Endpoint = ${server.wgEndpoint}
+AllowedIPs = ${allowedIps}
 `;
+
+	if (peer.wgPresharedKey) {
+		config += `PreSharedKey = ${peer.wgPresharedKey}\n`;
+	}
+
+	config += `PersistentKeepalive = 25\n`;
+
+	return config;
 };

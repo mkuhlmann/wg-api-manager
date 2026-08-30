@@ -10,8 +10,8 @@ const forceShim = override === 'true' || override === '1';
 const forceReal = override === 'false' || override === '0';
 
 const detectCapabilities = async () => {
-	if (forceShim) return { crypto: false, network: false };
-	if (forceReal) return { crypto: true, network: true };
+	if (forceShim) return { crypto: false, network: false, firewall: false };
+	if (forceReal) return { crypto: true, network: true, firewall: true };
 
 	const hasCrypto = !!Bun.which('wg');
 	let hasNetwork = hasCrypto && !!Bun.which('wg-quick') && !!Bun.which('ip');
@@ -26,20 +26,28 @@ const detectCapabilities = async () => {
 		await $`ip link delete dev ${probe}`.quiet().nothrow();
 	}
 
-	return { crypto: hasCrypto, network: hasNetwork };
+	// nft can be present without NET_ADMIN too - probe by actually listing tables
+	// rather than trusting the binary's presence.
+	let hasFirewall = !!Bun.which('nft');
+	if (hasFirewall) {
+		const list = await $`nft list tables`.quiet().nothrow();
+		hasFirewall = list.exitCode === 0;
+	}
+
+	return { crypto: hasCrypto, network: hasNetwork, firewall: hasFirewall };
 };
 
 const capabilities = await detectCapabilities();
 
-if (!capabilities.crypto || !capabilities.network) {
+if (!capabilities.crypto || !capabilities.network || !capabilities.firewall) {
 	if (process.env.NODE_ENV === 'production' && !forceShim) {
 		throw new Error(
-			'wg/wg-quick/ip are missing or lack permission to manage network interfaces (NET_ADMIN capability required). ' +
+			'wg/wg-quick/ip/nft are missing or lack permission to manage network interfaces (NET_ADMIN capability required). ' +
 				'Refusing to silently fall back to the development shim in production. Set WG_DEV_SHIM=true to override.'
 		);
 	}
 	log.warn(
-		`⚠️  WireGuard/network tooling unavailable (crypto: ${capabilities.crypto ? 'real' : 'shimmed'}, interfaces: ${capabilities.network ? 'real' : 'shimmed'}). ` +
+		`⚠️  WireGuard/network tooling unavailable (crypto: ${capabilities.crypto ? 'real' : 'shimmed'}, interfaces: ${capabilities.network ? 'real' : 'shimmed'}, firewall: ${capabilities.firewall ? 'real' : 'shimmed'}). ` +
 			'Running with the development shim — no real tunnels or network changes will be made.'
 	);
 }
@@ -53,5 +61,8 @@ export const isInterfaceUp = capabilities.network ? real.isInterfaceUp : shim.is
 export const startServer = capabilities.network ? real.startServer : shim.startServer;
 export const reloadServer = capabilities.network ? real.reloadServer : shim.reloadServer;
 export const stopServer = capabilities.network ? real.stopServer : shim.stopServer;
+
+export const applyFirewall = capabilities.firewall ? real.applyFirewall : shim.applyFirewall;
+export const resetFirewall = capabilities.firewall ? real.resetFirewall : shim.resetFirewall;
 
 export const cmd = real.cmd;

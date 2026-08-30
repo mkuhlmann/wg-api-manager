@@ -12,6 +12,18 @@
 				<small class="text-muted text-xs">static ip address (optional). next free address is used if left blank</small>
 				<span v-if="errors.wgAddress" class="text-down text-xs block mt-1">{{ errors.wgAddress }}</span>
 			</div>
+			<div class="field">
+				<label for="groupId" class="mb-1.5 text-sm text-muted block"><span class="text-accent-dim">&gt;</span> group</label>
+				<select
+					id="groupId"
+					v-model="form.groupId"
+					class="block w-full rounded-sm border border-border bg-bg text-text px-3 py-2 text-sm transition-colors duration-150 focus:outline-none focus:border-accent"
+				>
+					<option :value="null">none - unrestricted</option>
+					<option v-for="group in groups" :key="group.id" :value="group.id">{{ group.friendlyName ?? group.name }}</option>
+				</select>
+				<small class="text-muted text-xs">restricts reachability to what the group's policy allows. leave unset for unrestricted access</small>
+			</div>
 			<div class="flex justify-end gap-2 mt-2">
 				<BaseButton @click="visible = false" variant="ghost" type="button">cancel</BaseButton>
 				<BaseButton type="submit" variant="primary">
@@ -25,9 +37,10 @@
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue';
 import { useToast } from '@app/composables/useToast';
-import { useMutation, useQueryClient } from '@tanstack/vue-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import type { Peer, ServerPeer } from '@server/db/schema';
 import { eden } from '@app/queries/edenClient';
+import { queryServerGroups } from '@app/queries/queryGroups';
 import BaseButton from './BaseButton.vue';
 import BaseInput from './BaseInput.vue';
 import BaseModal from './BaseModal.vue';
@@ -44,12 +57,16 @@ const isEditMode = ref(props.peer ? true : false);
 const visible = defineModel<boolean>('visible', { required: true });
 const queryClient = useQueryClient();
 
+const { data: groups } = useQuery(queryServerGroups(props.server.id));
+
 const form = reactive<{
 	friendlyName?: string;
 	wgAddress?: string;
+	groupId?: string | null;
 }>({
 	friendlyName: '',
 	wgAddress: '',
+	groupId: null,
 });
 
 const errors = reactive({
@@ -81,11 +98,13 @@ watch(
 		if (peer) {
 			form.friendlyName = peer.friendlyName ?? '';
 			form.wgAddress = peer.wgAddress ?? '';
+			form.groupId = peer.groupId ?? null;
 			isEditMode.value = true;
 		} else {
 			isEditMode.value = false;
 			form.friendlyName = '';
 			form.wgAddress = '';
+			form.groupId = null;
 		}
 		errors.wgAddress = '';
 	},

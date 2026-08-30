@@ -81,15 +81,35 @@ export const isInterfaceUp = async (interfaceName: string) => {
 
 export const startServer = async (server: ServerPeer) => {
 	console.log(`starting server`);
-	Bun.write('/tmp/' + server.interfaceName + '.conf', await generateServerConfig(server), { mode: 0o600 });
+	await Bun.write('/tmp/' + server.interfaceName + '.conf', await generateServerConfig(server), { mode: 0o600 });
 	await cmd(`wg-quick up /tmp/${server.interfaceName}.conf`);
 };
 
 export const reloadServer = async (server: ServerPeer) => {
-	Bun.write('/tmp/' + server.interfaceName + '.conf', await generateServerConfig(server), { mode: 0o600 });
-	await cmd(`wg syncconf ${server.interfaceName} <(wg-quick strip /tmp/${server.interfaceName}.conf)`);
+	const conf = `/tmp/${server.interfaceName}.conf`;
+	const stripped = `/tmp/${server.interfaceName}.stripped.conf`;
+
+	await Bun.write(conf, await generateServerConfig(server), { mode: 0o600 });
+
+	// `wg-quick strip` needs no privileges; run it directly instead of via `cmd()`'s
+	// bash/ash shell so this doesn't depend on bash process substitution (`<(...)`),
+	// which ash does not support and the production image installs no bash for.
+	const strippedConfig = (await $`wg-quick strip ${conf}`.text()).trim();
+	await Bun.write(stripped, strippedConfig, { mode: 0o600 });
+
+	await cmd(`wg syncconf ${server.interfaceName} ${stripped}`);
 };
 
 export const stopServer = async (server: ServerPeer) => {
 	await cmd(`ip link delete dev ${server.interfaceName}`);
+};
+
+export const applyFirewall = async (ruleset: string) => {
+	// feed the generated script on stdin rather than a temp file - no path to
+	// inject, and no interpolation of the ruleset into a shell command at all.
+	await $`nft -f - < ${new Response(ruleset)}`.quiet();
+};
+
+export const resetFirewall = async () => {
+	await $`nft delete table inet wgmgr`.quiet().nothrow();
 };

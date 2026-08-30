@@ -20,6 +20,11 @@ const router = createRouter({
 			name: 'servers-detail',
 			component: () => import('../views/ServerView.vue'),
 		},
+		{
+			path: '/servers/:id/policy',
+			name: 'servers-policy',
+			component: () => import('../views/ServerPolicyView.vue'),
+		},
 	],
 });
 

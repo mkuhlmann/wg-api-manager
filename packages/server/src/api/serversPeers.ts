@@ -1,15 +1,27 @@
-import { Elysia, t } from 'elysia';
+import { Elysia, status, t } from 'elysia';
 import { db } from '../db';
-import { peersTable, serverPeersTable, type Peer } from '../db/schema';
+import { peerGroupsTable, peersTable, serverPeersTable, type Peer } from '../db/schema';
 import IPCIDR from 'ip-cidr';
 import { eq, and, or } from 'drizzle-orm';
 import { reloadServer, wgDerivePublicKey, wgGenKey, wgGenPsk } from '../wg/shell';
+import { syncFirewall } from '../wg/firewall';
 import { wgManager } from '../wg/manager';
 import { auth } from './auth';
 import { createLog } from '@server/lib/log';
 import { generatePeerConfig } from '@server/wg/config';
 
 const log = createLog('http');
+
+async function assertGroupBelongsToServer(groupId: string | null | undefined, serverPeerId: string) {
+	if (!groupId) return null;
+	const group = await db.query.peerGroupsTable.findFirst({
+		where: and(eq(peerGroupsTable.id, groupId), eq(peerGroupsTable.serverPeerId, serverPeerId)),
+	});
+	if (!group) {
+		return status(400, 'Group not found on this server');
+	}
+	return null;
+}
 
 export const serversPeersRoute = new Elysia()
 	.use(auth)
@@ -107,6 +119,9 @@ export const serversPeersRoute = new Elysia()
 				throw new Error('No IP supplied');
 			}
 
+			const groupError = await assertGroupBelongsToServer(body.groupId, server.id);
+			if (groupError) return groupError;
+
 			const peer = await db
 				.insert(peersTable)
 				.values({
@@ -118,11 +133,13 @@ export const serversPeersRoute = new Elysia()
 					wgPresharedKey: await wgGenPsk(),
 
 					wgAddress: ip,
+					groupId: body.groupId,
 				})
 				.returning();
 
 			log.info(`Created peer ${peer[0].id} on server ${server.id}`);
 			reloadServer(server);
+			syncFirewall();
 
 			return peer[0];
 		},
@@ -130,6 +147,7 @@ export const serversPeersRoute = new Elysia()
 			body: t.Object({
 				friendlyName: t.Optional(t.String()),
 				wgAddress: t.Optional(t.String()),
+				groupId: t.Optional(t.Nullable(t.String())),
 			}),
 			params: t.Object({
 				id: t.String(),
@@ -206,17 +224,25 @@ export const serversPeersRoute = new Elysia()
 				throw new Error('No IP supplied');
 			}
 
+			// undefined = leave the group unchanged, null = explicitly unassign (unrestrict)
+			if (body.groupId !== undefined) {
+				const groupError = await assertGroupBelongsToServer(body.groupId, server.id);
+				if (groupError) return groupError;
+			}
+
 			const updatedPeer = await db
 				.update(peersTable)
 				.set({
 					friendlyName: body.friendlyName ?? peer.friendlyName,
 					wgAddress: body.wgAddress ?? peer.wgAddress,
+					groupId: body.groupId !== undefined ? body.groupId : peer.groupId,
 				})
 				.where(and(eq(peersTable.id, params.peerId), eq(peersTable.serverPeerId, params.id)))
 				.returning();
 
 			log.info(`Updated peer ${peer.id} on server ${server.id}`);
 			reloadServer(server);
+			syncFirewall();
 
 			return updatedPeer;
 		},
@@ -224,6 +250,7 @@ export const serversPeersRoute = new Elysia()
 			body: t.Object({
 				friendlyName: t.Optional(t.String()),
 				wgAddress: t.Optional(t.String()),
+				groupId: t.Optional(t.Nullable(t.String())),
 			}),
 			params: t.Object({
 				id: t.String(),
@@ -275,6 +302,7 @@ export const serversPeersRoute = new Elysia()
 			await db.delete(peersTable).where(eq(peersTable.id, params.peerId));
 			log.info(`Deleted peer ${peer.id} from server ${server.id}`);
 			reloadServer(server);
+			syncFirewall();
 
 			return { success: true };
 		},

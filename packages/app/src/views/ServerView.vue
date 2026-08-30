@@ -4,24 +4,27 @@
 
 		<!-- Server Details -->
 		<div class="flex flex-col gap-4" v-if="server">
-			<h1 class="text-lg font-bold text-text"><span class="text-accent-dim">///</span> {{ server.friendlyName ?? server.id }}</h1>
+			<div class="flex items-center justify-between flex-wrap gap-3">
+				<h1 class="text-lg font-bold text-text"><span class="text-accent-dim">///</span> {{ server.friendlyName ?? server.id }}</h1>
+				<BaseButton :as="'router-link'" :to="{ name: 'servers-policy', params: { id: server.id } }" variant="secondary">policy</BaseButton>
+			</div>
 
 			<PeerModal v-model:visible="showAddPeerModal" :server="server" />
 			<PeerModal v-model:visible="showEditPeerModal" :peer="selectedPeer" :server="server" />
 
 			<BaseCard :title="server.friendlyName ?? server.id" class="max-w-2xl">
 				<div class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm text-muted">
-					<span>id</span>
-					<span class="truncate text-text">{{ server.id }}</span>
+					<span class="whitespace-nowrap">id</span>
+					<span class="text-text text-right break-all">{{ server.id }}</span>
 
-					<span>endpoint</span>
-					<span class="truncate text-text">{{ server.wgEndpoint }}</span>
+					<span class="whitespace-nowrap">endpoint</span>
+					<span class="text-text text-right break-all">{{ server.wgEndpoint }}</span>
 
-					<span>listen port</span>
-					<span class="truncate text-text">{{ server.wgListenPort }}</span>
+					<span class="whitespace-nowrap">listen port</span>
+					<span class="text-text text-right">{{ server.wgListenPort }}</span>
 
-					<span>cidr range</span>
-					<span class="truncate text-text">{{ server.cidrRange }}</span>
+					<span class="whitespace-nowrap">cidr range</span>
+					<span class="text-text text-right break-all">{{ server.cidrRange }}</span>
 				</div>
 			</BaseCard>
 		</div>
@@ -39,28 +42,29 @@
 				<template #grid-item="{ item: peer }">
 					<BaseCard :title="peer.friendlyName ?? peer.id" class="h-full flex flex-col">
 						<div class="flex-1 flex flex-col gap-3">
-							<div class="text-xs">
+							<div class="text-xs flex items-center gap-2 flex-wrap">
 								<span v-if="!peer.peerInfo" class="text-unknown border border-unknown/40 rounded-sm px-1.5 py-0.5">unknown</span>
 								<span v-else-if="peer.peerInfo.connected" class="text-up border border-up/40 rounded-sm px-1.5 py-0.5">up</span>
 								<span v-else class="text-down border border-down/40 rounded-sm px-1.5 py-0.5">down</span>
+								<span v-if="groupName(peer.groupId)" class="text-accent-dim border border-accent-dim/40 rounded-sm px-1.5 py-0.5">[{{ groupName(peer.groupId) }}]</span>
 							</div>
 
 							<div class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm text-muted">
-								<span>id</span>
-								<span class="truncate text-text">{{ peer.id }}</span>
+								<span class="whitespace-nowrap">id</span>
+								<span class="text-text text-right break-all">{{ peer.id }}</span>
 
-								<span>address</span>
-								<span class="truncate text-text">{{ peer.wgAddress }}</span>
+								<span class="whitespace-nowrap">address</span>
+								<span class="text-text text-right break-all">{{ peer.wgAddress }}</span>
 
 								<template v-if="peer.peerInfo">
-									<span>handshake</span>
-									<span class="truncate text-text">{{ peer.peerInfo.wgLatestHandshake == 0 ? '-' : new Date(peer.peerInfo.wgLatestHandshake * 1000).toLocaleString() }}</span>
+									<span class="whitespace-nowrap">handshake</span>
+									<span class="text-text text-right break-words">{{ peer.peerInfo.wgLatestHandshake == 0 ? '-' : new Date(peer.peerInfo.wgLatestHandshake * 1000).toLocaleString() }}</span>
 
-									<span>received</span>
-									<span class="truncate text-text">{{ Math.round((peer.peerInfo.wgTransferRx * 100) / 1024) / 100 }} KiB</span>
+									<span class="whitespace-nowrap">received</span>
+									<span class="text-text text-right">{{ Math.round((peer.peerInfo.wgTransferRx * 100) / 1024) / 100 }} KiB</span>
 
-									<span>transmitted</span>
-									<span class="truncate text-text">{{ Math.round((peer.peerInfo.wgTransferTx * 100) / 1024) / 100 }} KiB</span>
+									<span class="whitespace-nowrap">transmitted</span>
+									<span class="text-text text-right">{{ Math.round((peer.peerInfo.wgTransferTx * 100) / 1024) / 100 }} KiB</span>
 								</template>
 							</div>
 						</div>
@@ -80,6 +84,7 @@
 					<th class="px-4 py-2.5">status</th>
 					<th class="px-4 py-2.5">name/id</th>
 					<th class="px-4 py-2.5">address</th>
+					<th class="px-4 py-2.5">group</th>
 					<th class="px-4 py-2.5">transfer</th>
 					<th class="px-4 py-2.5 text-right">actions</th>
 				</template>
@@ -95,6 +100,10 @@
 					</td>
 					<td class="px-4 py-3 text-muted">
 						{{ peer.wgAddress }}
+					</td>
+					<td class="px-4 py-3 text-muted text-xs">
+						<span v-if="groupName(peer.groupId)" class="text-accent-dim">[{{ groupName(peer.groupId) }}]</span>
+						<span v-else>-</span>
 					</td>
 					<td class="px-4 py-3 text-muted text-xs">
 						<div v-if="peer.peerInfo">
@@ -137,9 +146,10 @@
 
 <script setup lang="ts">
 import { queryServer, queryServerPeers } from '@app/queries/queryServers';
+import { queryServerGroups } from '@app/queries/queryGroups';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { useRoute } from 'vue-router';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { api } from '@app/queries/edenClient';
 import QrcodeVue from 'qrcode.vue';
 import PeerModal from '@app/components/PeerModal.vue';
@@ -153,6 +163,10 @@ const route = useRoute();
 
 const { data: server, isLoading } = useQuery(queryServer(route.params.id as string));
 const { data: peers } = useQuery(queryServerPeers(route.params.id as string));
+const { data: groups } = useQuery(queryServerGroups(route.params.id as string));
+
+const groupNameById = computed(() => new Map((groups.value ?? []).map((g) => [g.id, g.friendlyName ?? g.name])));
+const groupName = (groupId: string | null | undefined) => (groupId ? groupNameById.value.get(groupId) : undefined);
 
 const queryClient = useQueryClient();
 

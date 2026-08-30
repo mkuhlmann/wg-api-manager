@@ -40,6 +40,13 @@
 				<BaseInput id="reservedIps" v-model.number="form.reservedIps" type="number" class="w-full" required placeholder="50" />
 				<small class="text-muted text-xs">number of ips to reserve at the start of the subnet range</small>
 			</div>
+			<div class="field">
+				<button type="button" class="flex items-center gap-2 text-sm text-text" @click="form.enableNat = !form.enableNat">
+					<span class="text-accent-dim">{{ form.enableNat ? '[x]' : '[ ]' }}</span>
+					<span><span class="text-accent-dim">&gt;</span> enable nat</span>
+				</button>
+				<small class="text-muted text-xs block mt-1">masquerade traffic leaving this subnet to the internet. required for any policy group's "internet" grant to actually work</small>
+			</div>
 			<div class="flex justify-end gap-2 mt-2">
 				<BaseButton @click="visible = false" variant="ghost" type="button">cancel</BaseButton>
 				<BaseButton type="submit" variant="primary">
@@ -79,6 +86,7 @@ const form = reactive({
 	wgListenPort: 51820,
 	cidrRange: '10.0.0.0/24',
 	reservedIps: 50,
+	enableNat: false,
 });
 
 const errors = reactive({
@@ -139,6 +147,7 @@ watch(
 			form.wgListenPort = server.wgListenPort;
 			form.cidrRange = server.cidrRange ?? '10.0.0.0/24';
 			form.reservedIps = server.reservedIps ?? 50;
+			form.enableNat = server.enableNat ?? false;
 			isEditMode.value = true;
 		} else {
 			isEditMode.value = false;
@@ -150,6 +159,7 @@ watch(
 			form.wgListenPort = 51820;
 			form.cidrRange = '10.0.0.0/24';
 			form.reservedIps = 50;
+			form.enableNat = false;
 		}
 		// Clear errors when opening/changing server
 		errors.interfaceName = '';

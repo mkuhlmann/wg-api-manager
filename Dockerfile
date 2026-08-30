@@ -17,10 +17,10 @@ FROM oven/bun:1.2.23-alpine
 
 RUN apk add --no-cache \
     coredns \
-    iptables \
     iputils \
     libcap-utils \
     net-tools \
+    nftables \
     openresolv \
     wireguard-tools \
     supervisor

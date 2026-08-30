@@ -12,11 +12,11 @@
 				<BaseCard :title="server.friendlyName ?? server.id" class="h-full flex flex-col">
 					<div class="flex-1">
 						<div class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm text-muted">
-							<span>id</span>
-							<span class="truncate text-text">{{ server.id }}</span>
+							<span class="whitespace-nowrap">id</span>
+							<span class="text-text text-right break-all">{{ server.id }}</span>
 
-							<span>endpoint</span>
-							<span class="truncate text-text">{{ server.wgEndpoint }}</span>
+							<span class="whitespace-nowrap">endpoint</span>
+							<span class="text-text text-right break-all">{{ server.wgEndpoint }}</span>
 						</div>
 					</div>
 

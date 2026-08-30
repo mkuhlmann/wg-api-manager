@@ -33,7 +33,7 @@
 
 		<div v-else>
 			<!-- Grid Layout -->
-			<div v-if="currentLayout === 'grid'" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+			<div v-if="currentLayout === 'grid'" class="grid gap-4 grid-cols-[repeat(auto-fill,minmax(300px,1fr))]">
 				<div v-for="item in filteredItems" :key="item.id">
 					<slot name="grid-item" :item="item" />
 				</div>

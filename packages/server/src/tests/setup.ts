@@ -36,5 +36,11 @@ mock.module('@server/wg/shell', () => {
 		stopServer: async (server: any) => {
 			/* mocked stopServer */
 		},
+		applyFirewall: async (ruleset: string) => {
+			/* mocked applyFirewall */
+		},
+		resetFirewall: async () => {
+			/* mocked resetFirewall */
+		},
 	};
 });

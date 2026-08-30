@@ -1,14 +1,5 @@
 <template>
 	<div class="crt-scanlines min-h-screen bg-bg text-text">
-		<div class="flex items-center gap-2 px-4 py-1.5 border-b border-border bg-surface2 text-xs text-muted">
-			<div class="flex gap-1.5">
-				<i class="w-2 h-2 rounded-full bg-border block"></i>
-				<i class="w-2 h-2 rounded-full bg-border block"></i>
-				<i class="w-2 h-2 rounded-full bg-border block"></i>
-			</div>
-			<span>wg-api-manager &mdash; operator console</span>
-		</div>
-
 		<nav class="flex items-center gap-6 px-4 py-3 border-b border-border">
 			<RouterLink to="/servers" class="font-bold text-accent tracking-tight flex items-center gap-1">
 				<span class="text-muted font-normal">#</span>wg-api-manager
@@ -16,7 +7,7 @@
 			<RouterLink to="/servers" class="nav-link">servers</RouterLink>
 		</nav>
 
-		<main class="px-6 py-8 max-w-6xl mx-auto">
+		<main class="px-6 py-8">
 			<RouterView />
 		</main>
 

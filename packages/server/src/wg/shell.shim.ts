@@ -85,3 +85,12 @@ export const stopServer = async (server: ServerPeer) => {
 	log.info(`[shim] "stopping" server ${server.interfaceName} (no real network changes made)`);
 	upInterfaces.delete(server.interfaceName);
 };
+
+export const applyFirewall = async (ruleset: string) => {
+	log.info(`[shim] "applying" firewall ruleset (no real network changes made) - written to /tmp/wgmgr.nft`);
+	await Bun.write('/tmp/wgmgr.nft', ruleset, { mode: 0o600 });
+};
+
+export const resetFirewall = async () => {
+	log.info(`[shim] "resetting" firewall ruleset (no real network changes made)`);
+};

@@ -4,6 +4,7 @@ import { serverPeersTable } from '../db/schema';
 import IPCIDR from 'ip-cidr';
 import { eq, or, and, ne } from 'drizzle-orm';
 import { reloadServer, startServer, wgDerivePublicKey, wgGenKey } from '../wg/shell';
+import { syncFirewall } from '../wg/firewall';
 import { auth } from './auth';
 import { createLog } from '@server/lib/log';
 import { generateServerConfig } from '@server/wg/config';
@@ -61,11 +62,14 @@ export const serversRoutes = new Elysia()
 
 					wgPrivateKey: privateKey,
 					wgPublicKey: publicKey,
+
+					enableNat: body.enableNat,
 				})
 				.returning();
 
 			log.info(`Created server ${peer[0].id}`);
 			startServer(peer[0]);
+			syncFirewall();
 			return peer;
 		},
 		{
@@ -78,6 +82,7 @@ export const serversRoutes = new Elysia()
 				wgEndpoint: t.String(),
 				wgListenPort: t.Integer(),
 				wgAddress: t.String(),
+				enableNat: t.Optional(t.Boolean({ default: false })),
 			}),
 			verifyAuth: { scope: 'admin' },
 		}
@@ -127,6 +132,7 @@ export const serversRoutes = new Elysia()
 
 			log.info(`Updated server ${updatedServer[0].id}`);
 			reloadServer(updatedServer[0]);
+			syncFirewall();
 
 			return updatedServer;
 		},
@@ -139,6 +145,7 @@ export const serversRoutes = new Elysia()
 				wgEndpoint: t.Optional(t.String()),
 				wgListenPort: t.Optional(t.Integer()),
 				wgAddress: t.Optional(t.String()),
+				enableNat: t.Optional(t.Boolean()),
 			}),
 			params: t.Object({
 				id: t.String(),

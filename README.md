@@ -13,13 +13,13 @@ I created this project to manage an automated large scale wireguard vpn for thin
 - Primarily designed to use api
 - Optionally provides simple ui for managing configurations
 - Automatically generate client configurations (including QR codes)
+- Restricted clients: put peers in groups and control what each group can reach, enforced server-side with nftables (see [Restricted Clients](#restricted-clients) below)
+- Redirect traffic through the VPN, including full internet egress, per group
 - Traffic stats
 - Authenticated with administration, server and peer token
 
 ## Planned Features
 
-- Redirect traffic through VPN
-- Testing still missing completely
 - Desktop client
 - Perspectively sso (openid connect)
 
@@ -76,3 +76,28 @@ wget https://raw.githubusercontent.com/mkuhlmann/wg-api-manager/main/docker-comp
 ```bash
 docker-compose up -d
 ```
+
+## Restricted Clients
+
+By default every peer on a server can reach every other peer - this is unchanged, and any peer you never assign
+to a group keeps behaving exactly this way.
+
+To restrict a peer, put it in a **group**, then define what that group is allowed to reach:
+
+- another **group** (directional - "office can reach db" doesn't imply "db can reach office"; a group needs an
+  explicit rule to itself before its own members can reach each other)
+- an arbitrary **subnet/CIDR** - useful for a site-to-site LAN behind the gateway
+- the **server** itself (its own tunnel address - dns, the management api)
+- the **internet** - also requires `enableNat` to be turned on for that server, since this masquerades the
+  group's traffic on the way out. Off by default; turning it on for a server does not by itself grant internet
+  access to anyone - each group's "internet" grant is still required.
+
+This is enforced with a generated nftables ruleset on the server, not by what a client's own config says it's
+allowed to do - a client can't bypass it by editing its config. Manage groups and their reachability matrix from
+the "policy" button on a server's page, or via the `/wg/servers/:id/groups` and
+`/wg/servers/:id/groups/:groupId/rules` api endpoints.
+
+## Testing
+
+The server package has unit and integration tests (`bun run --cwd packages/server test`). The frontend
+(`packages/app`) has no tests yet.
